@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>たぶん、帰れる</title>
+<style>*{margin:0;padding:0;box-sizing:border-box;}body{background:#050305;}</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef, useCallback } = React;
+
+
+const TILE=32,VIEW_W=11,VIEW_H=9,MAP_W=20,MAP_H=15;
+const WALL=1,GRASS=2,TALL=3,STONE=4,DOOR=5,HEAL=7;
+const SAVE_KEY="grimoria_v5";
+const MAX_LEVEL=50,MAX_PARTY=5;
+
+const PAL={"0":"transparent","1":"#111","2":"#1a1a2e","3":"#3d2b1f","4":"#5c3a1e","5":"#7a4f2e","6":"#a0522d","7":"#c97b3a","8":"#e8a84a","9":"#f5d070","a":"#f0e8d0","b":"#d4c4a0","c":"#8b7355","d":"#4a3728","e":"#2d1f14","f":"#fff","g":"#c0392b","h":"#e74c3c","i":"#922b21","j":"#7f8c8d","k":"#95a5a6","l":"#bdc3c7","m":"#2c3e50","n":"#34495e","o":"#1abc9c","p":"#16a085","q":"#2980b9","r":"#1a5276","s":"#8e44ad","t":"#6c3483","u":"#d35400","v":"#e67e22","w":"#27ae60","x":"#1e8449","y":"#f39c12","z":"#d4ac0d","A":"#ffeaa7","B":"#fdcb6e","C":"#e17055","D":"#74b9ff","E":"#a29bfe","F":"#fd79a8","G":"#55efc4","H":"#00b894","I":"#636e72"};
+function pad(s,n){const c=s.replace(/\s/g,"");return c.padEnd(n,"0").slice(0,n);}
+
+// ── スプライト ──
+const _TOP="0000006660000000"+"0000065560000000"+"0000666660000000"+"0000655650000000"+"0000066660000000"+"0000066660000000"+"000lllllll000000"+"00ljaaaaaajl0000"+"00ljaaaaaajl0000"+"000lbbbbbbbl0000"+"0000lbbbbbl00000"+"0000lbbbbbl00000"+"0000bbbbbbbb0000"+"0000lbbbbbl00000"+"000llbbbbll00000"+"000l0bbbb0l00000"+"00000bbbb00000000";
+const _FS="00000bbbb00000000"+"00000bbbb00000000"+"00000b00b00000000"+"00000b00b00000000"+"00000b00b00000000"+"0000cbbb0cb000000"+"0000cccc0cc000000";
+const _F1="00000bbbb00000000"+"00000bbbb00000000"+"0000bb0bb00000000"+"000bbb00b000000000"+"000bb000b000000000"+"000cbb00bc0000000"+"000ccc00cc0000000";
+const _F2="00000bbbb00000000"+"00000bbbb00000000"+"00bb00bb000000000"+"0b000bbb000000000"+"0b0000bb000000000"+"0cb00bbc000000000"+"0cc00ccc000000000";
+
+const SPR_DATA={
+  grandpa:{w:16,h:24,frames:[pad(_TOP+_FS,384),pad(_TOP+_F1,384),pad(_TOP+_F2,384)]},
+  granny:{w:16,h:24,frames:[pad("0000006660000000"+"0000065560000000"+"0000666660000000"+"0000655650000000"+"0000066660000000"+"000sssssss000000"+"00ssjaaaaajss000"+"00ssjaaaaajs0000"+"000sjaaaaajss000"+"0000saaaaas00000"+"0000saaaaas00000"+"0000saaaaas00000"+"0000saaaaas00000"+"0000saaaaas00000"+"000ssaaaaass0000"+"000s0aaaa00s0000"+"0000saaaaas00000"+"00000saaas000000"+"00000s00s0000000"+"00000s00s0000000"+"00000s00s0000000"+"0000cssc0cs00000"+"0000cccc0cc00000"+"0000000000000000",384)]},
+  daughter:{w:16,h:24,frames:[pad("0000006660000000"+"0000065560000000"+"0000h66h60000000"+"0000655650000000"+"0000066660000000"+"000hhhhhhh000000"+"00hhjaaaajhh0000"+"00hhjaaaaaajh000"+"000hhaaaaajhh000"+"0000haaaaaah0000"+"0000haaaaah00000"+"0000haaaaah00000"+"0000haaaaah00000"+"0000haaaaah00000"+"000hhaaaaahh0000"+"000h00aaaa0h0000"+"0000haaaaah00000"+"00000haaah000000"+"00000h00h0000000"+"00000h00h0000000"+"00000h00h0000000"+"0000chh00ch00000"+"0000cccc0cc00000"+"0000000000000000",384)]},
+  son:{w:16,h:24,frames:[pad("0000006660000000"+"0000065560000000"+"0000666660000000"+"0000655650000000"+"0000066660000000"+"000mmmmmmm000000"+"00mmmaaaaamm0000"+"00mmmaaaaamm0000"+"000mmaaaaaomm000"+"0000maaaaanm0000"+"0000maaaaanm0000"+"0000maaaaanm0000"+"0000maaaaanm0000"+"0000maaaaanm0000"+"000mmaaaaanmm000"+"000m00aaaa0m0000"+"0000maaaaanm0000"+"00000maaanm00000"+"00000m00m0000000"+"00000m00m0000000"+"00000m00m0000000"+"0000cmm00cm00000"+"0000cccc0cc00000"+"0000000000000000",384)]},
+  crow:{w:12,h:12,frames:[pad("000011100000"+"001111111000"+"011f11f11100"+"011111111100"+"001111111000"+"000111110000"+"000111110000"+"001111110000"+"011111111000"+"011100011000"+"001100011000"+"000000000000",144),pad("000011100000"+"001111111000"+"01f1111f1100"+"011111111100"+"001111111000"+"000011100000"+"000111110000"+"001111110000"+"001111111000"+"000110011000"+"000110011000"+"000000000000",144)]},
+  rat:{w:12,h:12,frames:[pad("000000a00000"+"000000a00000"+"000aaaaaa000"+"00aaf5faa000"+"00aaaaaaaaa0"+"0aaaaaaaaaaa"+"0aaaaaaaaaa0"+"00aaaaaaaaa0"+"000aaaaaaa00"+"000a000a0000"+"000a000a0000"+"000000000000",144)]},
+  larva1:{w:12,h:12,frames:[pad("000ccccc0000"+"000c33333000"+"0c333c333c00"+"0c333c333c00"+"003333333300"+"003333333300"+"003333333300"+"0c333333cc00"+"00cccccccc00"+"0000cc0cc000"+"0000cc0cc000"+"000000000000",144)]},
+  larva2:{w:12,h:12,frames:[pad("004444444000"+"044444444400"+"444114114440"+"044444444400"+"044444444400"+"044444444400"+"044444444400"+"004444444000"+"000444440000"+"000444440000"+"000044400000"+"000000000000",144)]},
+  larva3:{w:12,h:12,frames:[pad("005555555000"+"055555555500"+"555511155550"+"555155511550"+"055555555500"+"055555555500"+"055555555500"+"055555555500"+"005555555000"+"000555550000"+"000055500000"+"000000000000",144)]},
+  kitten1:{w:12,h:12,frames:[pad("0j00000j0000"+"0jj0000jj000"+"0jjjjjjjj000"+"0jjf0fjjj000"+"0jjjjjjjj000"+"00jjjjjjj000"+"00jjjjjjj000"+"0jjjjjjjjj00"+"00jj000jj000"+"00jj000jj000"+"00jj000jj000"+"000000000000",144)]},
+  kitten2:{w:12,h:12,frames:[pad("0k00000k0000"+"0kk0000kk000"+"0kkkkkkkkk00"+"0kkf0fkkk000"+"0kkkkkkkk000"+"00kkkkkkk000"+"00kkkkkkkk00"+"0kkkkkkkkkk0"+"00kk000kk000"+"0kk0000kk000"+"0kk0000kk000"+"000000000000",144)]},
+  kitten3:{w:12,h:12,frames:[pad("0l00000l0000"+"0ll0000ll000"+"0lllllllll00"+"0llf0flll000"+"0llllllll000"+"00llllllll00"+"00lllllllll0"+"0llllllllll0"+"00ll0f0ll000"+"0ll00000ll00"+"0ll00000ll00"+"000000000000",144)]},
+  fish1:{w:12,h:12,frames:[pad("000000000000"+"00000h000000"+"0000hhh00000"+"000hhhhh0000"+"00hhhhhhh000"+"0hhhhhhhhh00"+"00hhhhhhh000"+"000hhhhh0000"+"0000hhh00000"+"000h000h0000"+"00h00000h000"+"000000000000",144)]},
+  fish2:{w:12,h:12,frames:[pad("000000000000"+"00000g000000"+"0000ggg00000"+"000ggggg0000"+"00ggggggg000"+"0ggggggggg00"+"0ggggggggg00"+"00ggggggg000"+"000ggggg0000"+"000g000g0000"+"00g00000g000"+"000000000000",144)]},
+  fish3:{w:12,h:12,frames:[pad("000000000000"+"00000C000000"+"0000CCC00000"+"000CCCCC0000"+"00CCCCCCC000"+"0CCCCCCCCC00"+"0CCCCCCCCC00"+"00CCCCCCC000"+"000CCCCC0000"+"000f000f0000"+"00f00000f000"+"000000000000",144)]},
+};
+const SPRITES={};
+Object.entries(SPR_DATA).forEach(([k,v])=>{SPRITES[k]={...v,frames:v.frames.map(f=>pad(f,v.w*v.h))};});
+
+
+// ── 進化チェーン ──
+// larva → シュレーディンガー系カブトムシ
+// kitten → 謎に長い猫系シュール
+// goldfish → そのまま
+const EVO={
+  larva:[
+    {id:"larva",name:"虫かご（閉じてる）",spr:"larva1",evoAt:16},
+    {id:"larva_m",name:"虫かご（たぶん生きてる）",spr:"larva2",evoAt:36},
+    {id:"larva_a",name:"カブトムシ（だと思う）",spr:"larva3",evoAt:null}
+  ],
+  kitten:[
+    {id:"kitten",name:"猫だ",spr:"kitten1",evoAt:16},
+    {id:"kitten_m",name:"猫か？",spr:"kitten2",evoAt:36},
+    {id:"kitten_a",name:"猫じゃない",spr:"kitten3",evoAt:null}
+  ],
+  goldfish:[
+    {id:"goldfish",name:"金魚",spr:"fish1",evoAt:16},
+    {id:"goldfish_m",name:"古い金魚",spr:"fish2",evoAt:36},
+    {id:"goldfish_a",name:"腐った水の主",spr:"fish3",evoAt:null}
+  ],
+  crow:[
+    {id:"crow",name:"カラス",spr:"crow",evoAt:20},
+    {id:"crow_a",name:"夜鴉",spr:"crow",evoAt:null}
+  ],
+  rat:[
+    {id:"rat",name:"ネズミ",spr:"rat",evoAt:18},
+    {id:"rat_a",name:"巨鼠",spr:"rat",evoAt:null}
+  ]
+};
+const ID2EVO={};
+Object.entries(EVO).forEach(([chain,stages])=>{stages.forEach((s,i)=>{ID2EVO[s.id]={chain,idx:i,...s};});});
+function baseIdOf(id){const c=ID2EVO[id];return c?EVO[c.chain][0].id:id;}
+
+// 技名：シュール・間接的
+const LEARNSET={
+  larva:[
+    {lv:1,mv:{name:"フタを開けない",pw:25,type:"でかい",pp:35,mpp:35}},
+    {lv:5,mv:{name:"そっと置いておく",pw:30,type:"でかい",pp:30,mpp:30}},
+    {lv:10,mv:{name:"多分生きてると思う",pw:42,type:"つめたい",pp:22,mpp:22}},
+    {lv:16,mv:{name:"観測しない",pw:52,type:"オス",pp:18,mpp:18}},
+    {lv:22,mv:{name:"秋になった",pw:60,type:"くさい",pp:14,mpp:14}},
+    {lv:30,mv:{name:"もう動いてないかも",pw:72,type:"しらん",pp:10,mpp:10}},
+    {lv:36,mv:{name:"呼ばれた気がした",pw:85,type:"オス",pp:8,mpp:8}},
+    {lv:45,mv:{name:"開けたら空だった",pw:100,type:"しらん",pp:5,mpp:5}}
+  ],
+  kitten:[
+    {lv:1,mv:{name:"ひっかく",pw:25,type:"メス",pp:35,mpp:35}},
+    {lv:5,mv:{name:"毛玉を吐く",pw:32,type:"くさい",pp:28,mpp:28}},
+    {lv:10,mv:{name:"高いところに登る",pw:42,type:"つめたい",pp:22,mpp:22}},
+    {lv:16,mv:{name:"狭いとこに入る",pw:55,type:"つめたい",pp:16,mpp:16}},
+    {lv:22,mv:{name:"急に走り出す",pw:64,type:"メス",pp:12,mpp:12}},
+    {lv:30,mv:{name:"長い胴でまとわりつく",pw:76,type:"オス",pp:10,mpp:10}},
+    {lv:36,mv:{name:"胴が邪魔で届かない",pw:88,type:"つめたい",pp:8,mpp:8}},
+    {lv:45,mv:{name:"丸まれない",pw:105,type:"しらん",pp:5,mpp:5}}
+  ],
+  goldfish:[
+    {lv:1,mv:{name:"腐臭",pw:28,type:"くさい",pp:35,mpp:35}},
+    {lv:5,mv:{name:"霊波",pw:32,type:"オス",pp:25,mpp:25}},
+    {lv:10,mv:{name:"腐食の水",pw:45,type:"くさい",pp:20,mpp:20}},
+    {lv:16,mv:{name:"古い水流",pw:58,type:"くさい",pp:15,mpp:15}},
+    {lv:22,mv:{name:"幽霊の鱗",pw:65,type:"オス",pp:12,mpp:12}},
+    {lv:30,mv:{name:"腐れ深淵",pw:78,type:"くさい",pp:10,mpp:10}},
+    {lv:36,mv:{name:"主の呪い",pw:90,type:"オス",pp:8,mpp:8}},
+    {lv:45,mv:{name:"万古不滅",pw:110,type:"くさい",pp:5,mpp:5}}
+  ],
+  crow:[
+    {lv:1,mv:{name:"くちばし",pw:22,type:"しらん",pp:35,mpp:35}},
+    {lv:6,mv:{name:"羽ばたき",pw:30,type:"つめたい",pp:25,mpp:25}},
+    {lv:14,mv:{name:"闇の羽",pw:48,type:"しらん",pp:18,mpp:18}},
+    {lv:20,mv:{name:"夜鴉の叫び",pw:65,type:"つめたい",pp:12,mpp:12}},
+    {lv:35,mv:{name:"漆黒の翼",pw:85,type:"しらん",pp:8,mpp:8}}
+  ],
+  rat:[
+    {lv:1,mv:{name:"かじる",pw:20,type:"メス",pp:35,mpp:35}},
+    {lv:6,mv:{name:"闇這い",pw:28,type:"しらん",pp:25,mpp:25}},
+    {lv:12,mv:{name:"毒の牙",pw:42,type:"くさい",pp:18,mpp:18}},
+    {lv:18,mv:{name:"巨鼠の怒り",pw:68,type:"メス",pp:12,mpp:12}},
+    {lv:35,mv:{name:"疫病の息",pw:88,type:"くさい",pp:8,mpp:8}}
+  ]
+};
+function mkMv(e){return{name:e.mv.name,power:e.mv.pw,type:e.mv.type,pp:e.mv.mpp,maxPp:e.mv.mpp};}
+function buildMoves(id,lv){return(LEARNSET[baseIdOf(id)]||[]).filter(e=>e.lv<=lv).slice(-4).map(mkMv);}
+function learnAtLv(id,lv){return(LEARNSET[baseIdOf(id)]||[]).filter(e=>e.lv===lv).map(mkMv);}
+function restoreAllPP(c){return{...c,moves:c.moves.map(m=>({...m,pp:m.maxPp}))};}
+function expNeeded(lv){return Math.floor(lv*lv*0.6+lv*12);}
+function calcDmg(atk,def,power){return Math.max(1,Math.floor(power*(atk/Math.max(def,1))*0.5*(0.85+Math.random()*0.15)));}
+
+function gainExp(c,amount){
+  let cr={...c,exp:(c.exp||0)+amount};
+  const levelUps=[],newMovesToLearn=[],evolutions=[];
+  while(cr.level<MAX_LEVEL){
+    if(cr.exp<expNeeded(cr.level+1))break;
+    cr.exp-=expNeeded(cr.level+1);cr.level++;
+    cr={...cr,maxHp:Math.floor(cr.maxHp*1.06),atk:Math.floor(cr.atk*1.05),def:Math.floor(cr.def*1.04),spd:Math.floor(cr.spd*1.04)};
+    cr.hp=Math.min(cr.hp+8,cr.maxHp);
+    cr={...cr,moves:cr.moves.map(m=>({...m,pp:m.maxPp}))};
+    levelUps.push(cr.level);
+    learnAtLv(cr.id,cr.level).forEach(mv=>newMovesToLearn.push(mv));
+    const info=ID2EVO[cr.id];
+    if(info&&info.evoAt&&cr.level>=info.evoAt){
+      const chain=EVO[info.chain],next=chain[info.idx+1];
+      if(next){const oldName=cr.name;cr={...cr,id:next.id,name:next.name,spr:next.spr,maxHp:Math.floor(cr.maxHp*1.15),atk:Math.floor(cr.atk*1.12),def:Math.floor(cr.def*1.10),spd:Math.floor(cr.spd*1.10),moves:buildMoves(next.id,cr.level)};cr.hp=Math.min(cr.hp+20,cr.maxHp);evolutions.push({from:oldName,to:cr.name});}
+    }
+  }
+  return{creature:cr,levelUps,newMovesToLearn,evolutions};
+}
+
+// ── アイテム定義（使用回数付き） ──
+const ITEMS={
+  ointment:{name:"新品の軟膏（3本目）",hp:30,type:"heal",uses:1,desc:"なぜか3本ある。1本目と2本目はどこへ行った。"},
+  half_meds:{name:"飲みかけの薬",hp:40,type:"heal",uses:1,desc:"何の薬か分からない。でも何となく飲んでみる。"},
+  cold_tea:{name:"冷えたお茶",hp:35,type:"heal",uses:1,desc:"誰かが置いて行った。冷たい。でも甘い。"},
+  dentures:{name:"誰かの入れ歯",hp:20,type:"heal",uses:1,desc:"落ちていた。合わない。でも何となく力が出た気がした。"},
+  glasses:{name:"老眼鏡",hp:15,type:"heal",uses:1,desc:"かけてみる。ぼやけていたものが少し見えた気がする。"},
+  cane:{name:"折れた杖",hp:25,type:"heal",uses:1,desc:"半分に折れている。でも使える。"},
+  stabilizer:{name:"入れ歯安定剤",hp:18,type:"heal",uses:1,desc:"使いかけ。誰のものかわからない。でも、なんとなく元気が出た。"},
+  yomei:{name:"養命種",hp:0,type:"pp",uses:1,desc:"野生の生き物が落としていった。苦い。全技のPPが少し戻る気がした。ppRestore:15"},
+  yomei_full:{name:"養命種（大）",hp:0,type:"pp",uses:1,desc:"大きな養命種。全技のPPが全回復する。ppRestore:99"},
+  // 記憶アイテム（家族・ストーリー系）
+  photo0:{name:"色褪せた写真",hp:0,type:"memory",desc:"家族写真。四人で写っている。笑っていた。…いつの話だ。"},
+  receipt0:{name:"スーパーのレシート",hp:0,type:"memory",desc:"えのき茸、豆腐、牛乳。達筆な字で「これ買ってきて」と書いてある。誰の字だ。"},
+  candy1:{name:"「明日香より」の飴",hp:0,type:"memory",desc:"桜餅味。食べかけのまま、紙に包んで。字が丸い。これは…誰だ。"},
+  card1:{name:"名刺",hp:0,type:"memory",desc:"久保田 誠一。課長。硬い字。一枚だけ、財布の裏に入っていた。息子か。"},
+  nameplate:{name:"病院のネームプレート",hp:0,type:"memory",desc:"「久保田 正雄」と書いてある。自分の名前だ。なぜここにあるのか分からない。"},
+  letter_draft:{name:"手紙の下書き",hp:0,type:"memory",desc:"誰かへの手紙。字が途中で乱れている。最後の行だけ読める。「会いたい」。"},
+  wedding_photo:{name:"結婚式の写真（切り抜き）",hp:0,type:"memory",desc:"自分と誰かが写っている。顔が切り抜かれている。誰が切り抜いたのか。"},
+  rehab_record:{name:"リハビリの記録",hp:0,type:"memory",desc:"日付と数字が並んでいる。最後の日付から、ずいぶん経っている。"},
+  ring:{name:"細い指輪（澄の文字）",hp:0,type:"memory",desc:"小さくて、細い。「澄」と刻んである。ポケットの奥にあった。"},
+  family_photo:{name:"家族写真",hp:0,type:"memory",desc:"五人写っている。みんな笑っている。自分だけ、目が閉じている。"},
+  mirror:{name:"小さな手鏡",hp:0,type:"memory",desc:"覗いてみた。知らない顔が映っていた。…よく見たら、自分だった。"},
+  // 平成の不思議な小話系記憶アイテム
+  school_note:{name:"小学校の連絡帳",hp:0,type:"memory",desc:"三年二組。久保田正雄。「昨日、下校中に知らない子がついてきました。名前を聞いたら笑って消えました」と書いてある。担任の朱書きは「気をつけてください」だけ。"},
+  radio_cassette:{name:"ラジカセのテープ",hp:0,type:"memory",desc:"何かを録音したテープ。再生すると、自分の声で「もう帰ってくるな」と言っている。録った覚えはない。"},
+  mystery1:{name:"学校の七不思議①",hp:0,type:"memory",desc:"音楽室のベートーベンの絵が、夜だけ目を開ける。確かめに行った子は、翌日「何も見なかった」と言った。それきり何も言わなくなった。"},
+  mystery2:{name:"学校の七不思議②",hp:0,type:"memory",desc:"四階のトイレには個室が四つある。でも数えると五つある日がある。五つ目のドアは、開けた人がいない。"},
+  mystery3:{name:"学校の七不思議③",hp:0,type:"memory",desc:"体育館の鏡に、自分の後ろに誰かが映ることがある。振り返っても誰もいない。でも鏡にはまだいる。"},
+  mystery4:{name:"学校の七不思議④",hp:0,type:"memory",desc:"理科室の人体模型が、朝と夕方で立ち位置が違う。先生は「風で動く」と言うが、人体模型は台に固定されている。"},
+  mystery5:{name:"学校の七不思議⑤",hp:0,type:"memory",desc:"プールの底に、誰かの名前が書いてある。毎年ペンキで塗りつぶすが、翌年また同じ名前が浮かび上がる。"},
+  mystery6:{name:"学校の七不思議⑥",hp:0,type:"memory",desc:"放課後に一人で廊下を歩くと、後ろから足音がついてくる。止まると止まる。走ると走る。振り返ると、自分の影が一拍遅れて止まる。"},
+  mystery7:{name:"学校の七不思議⑦",hp:0,type:"memory",desc:"卒業式の日、体育館に八人目の卒業生がいたと言う子がいる。写真には確かに見知らぬ子が写っていた。その子だけ、目が閉じている。"},
+  heisei_eraser:{name:"コレクション消しゴム",hp:0,type:"memory",desc:"スイカ型、たこ焼き型、ファミコンカセット型。全部使うには惜しくて、全部使えなかった。引き出しの奥にまだあるはずだ。…どこへ行ったんだろう。"},
+  heisei_sticker:{name:"シール帳",hp:0,type:"memory",desc:"ドラゴンボール、ビックリマン、スーパーマリオ。全部で三百枚くらい。誰かに譲った気もするし、捨てた気もする。でも手元にあった頃は、毎日見ていた。"},
+  heisei_game:{name:"ゲームの説明書",hp:0,type:"memory",desc:"テレビゲームの説明書。ドッグイヤーだらけ。落書きもある。「ここにレアアイテムあり→」という矢印が描いてあるが、矢印の先は余白だ。"},
+  old_key:{name:"見覚えのない鍵",hp:0,type:"memory",desc:"どこかの鍵。捨てられなくて、ずっとキーホルダーにつけていた。何の鍵か思い出せないまま、三十年経った。"},
+  notebook:{name:"日記帳（途中まで）",hp:0,type:"memory",desc:"中学一年の夏から始まって、十一月で止まっている。十一月に何があったか覚えていない。でも、その次のページは破り取られている。"},
+  tv_guide:{name:"テレビ欄（切り抜き）",hp:0,type:"memory",desc:"月曜夜八時に丸がついている。何の番組か読めない。でも毎週楽しみにしていた気がする。誰かと一緒に見ていた気がする。"},
+  coin:{name:"穴の開いた五円玉",hp:0,type:"memory",desc:"昭和五十三年。自分が生まれた年のものだ。財布に入れてずっと持っていた。使うことはなかった。使えなかった。"}
+};
+
+// アイテム使用（uses カウント対応）
+function useItemOn(it,party){
+  if(it.type==="pp"){
+    const ppAmt=it.name.includes("大")?99:15;
+    const np=party.map((c,i)=>i===0?{...c,moves:(c.moves||[]).map(m=>({...m,pp:Math.min(m.maxPp,m.pp+ppAmt)}))}:c);
+    return{party:np,msg:`${party[0]?.name||"仲間"}のPPが回復した！`};
+  }
+  if(it.hp>0){
+    const lead=party[0];
+    if(!lead||!lead.hp)return{party,msg:"仲間がいない。"};
+    if(lead.hp>=lead.maxHp)return{party,msg:"HPは満タンだ。"};
+    const np=party.map((c,i)=>i===0?{...c,hp:Math.min(c.maxHp,c.hp+it.hp)}:c);
+    return{party:np,msg:`${party[0].name}のHPが${it.hp}回復した！`};
+  }
+  return{party,msg:"何も起きなかった。"};
+}
+
+const CHAR_PROFILES={
+  asuka:{name:"久保田 明日香",role:"次女・44歳",spr:"daughter",desc:"父の記憶がほぼない。でも来た。感情的で、泣きながら怒る。それでも毎週来ていた。"},
+  seiichi:{name:"久保田 誠一",role:"長男・48歳",spr:"son",desc:"冷静。義務感で動く。本心は見せない。ただ、靴が泥だらけだった。遠くから来たのだろう。"},
+  granny_npc:{name:"縁側のおばあさん",role:"…",spr:"granny",desc:"名前を聞いたことがない。ずっとあの縁側にいる。「奥さんには内緒」と言った時、少し笑った。"},
+  midori:{name:"ミドリ",role:"チーフナース",spr:"daughter",desc:"本来の使命を持つ。穏やかな顔で、でも目が笑っていない。"},
+  haruka:{name:"ハルカ",role:"受付・元暗殺者",spr:"daughter",desc:"笑顔が怖い。最強技「.45口径　笑」。なぜここにいるのか。"},
+  shouhei:{name:"ショウヘイ",role:"作業療法士",spr:"son",desc:"熱血。2段階で戦う。「あきらめないでください！」と叫びながら殴ってくる。"},
+  tatsuya:{name:"タツヤ",role:"主治医",spr:"son",desc:"誠実だが、真実を隠してきた。"},
+  sumiko:{name:"久保田 澄子",role:"妻・71歳",spr:"granny",desc:"最強。ずっと待っていた。"}
+};
+
+// ── WORLD定義 ──
+const WORLD=[
+  // エリア0
+  {name:"廃墟の倉庫周辺",bg:"#0a0808",spawn:{x:5,y:7},
+   map:[[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],[1,2,3,3,3,2,2,2,1,1,1,1,2,2,2,3,3,2,2,1],[1,2,3,2,3,2,2,2,1,4,4,1,2,2,2,3,2,2,2,1],[1,2,2,2,2,2,2,2,1,4,4,1,2,2,2,2,2,2,2,1],[1,2,2,7,2,2,2,2,2,2,2,2,2,2,2,2,7,2,2,1],[1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],[1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],[1,2,2,7,2,2,2,2,2,2,2,2,2,2,2,7,2,2,2,1],[1,2,2,2,2,4,4,2,2,2,2,2,4,4,2,2,2,2,2,1],[1,2,2,2,2,4,4,2,2,2,2,2,4,4,2,2,2,2,2,1],[1,2,3,3,2,2,2,2,2,2,2,2,2,2,2,3,3,2,2,1],[1,2,3,3,2,2,2,2,2,2,2,2,2,2,2,3,3,2,2,1],[1,2,2,2,2,2,2,2,2,5,2,2,2,2,2,2,2,2,2,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]],
+   exits:[{x:9,y:13,toArea:1,sx:9,sy:1}],
+   boss:{pos:{x:15,y:7},spr:"daughter",name:"久保田 明日香",role:"次女・44歳",
+     intro:["お父さん！こんなところで何してるの！","…また、迷子？","一緒に帰ろう。車、停めてあるから。"],
+     outro:["…強い。昔から、頑固だった。","……勝手にして。"],
+     data:{id:"asuka",name:"久保田 明日香",types:["オス","メス"],maxHp:120,hp:120,atk:55,def:40,spd:60,level:20,moves:[{name:"家族の義務",power:40,type:"オス",pp:20,maxPp:20},{name:"感情の爆発",power:60,type:"メス",pp:10,maxPp:10},{name:"遠い記憶",power:30,type:"つめたい",pp:30,maxPp:30},{name:"父親への怒り",power:75,type:"メス",pp:5,maxPp:5}]}},
+   npcs:[{id:"granny",pos:{x:4,y:12},spr:"granny",talks:["…あら。","…久しぶりだね。","ここ、覚えてる？","昔もよく来てたね。","あんたは変わらないね。","奥さんには、内緒にしてたね。","…わかってた？","何年、経ったかな。","あんたの声、好きだったよ。","もう会えないと思ってた。","…嬉しいよ。","怖くないの？","ここから逃げようとしてるの？","どこへ行くつもり？","あんたのこと、ずっと待ってたよ。","奥さんは知らなかったと思う。","…でも、気づいてたかもね。","あんたが来るたびに、嬉しかった。","もう昔には戻れないね。","それでも、ここにいたよ。","あんたの子供たち、大きくなったね。","わたしには、子供いないから。","それで良かったと思ってる。","…本当に？","わからなくなってきた。","あんたは、わかってる？","どこへ行けばいい？","一緒に行こうか。","怖くないよ。","…一緒に行くよ。"]}],
+   items:[{id:"fi0",key:"photo0",pos:{x:6,y:8}},{id:"fi1",key:"receipt0",pos:{x:12,y:8}},{id:"fi2",key:"ointment",pos:{x:3,y:5}},{id:"fi3",key:"cold_tea",pos:{x:16,y:5}},{id:"fi_m1",key:"mystery1",pos:{x:8,y:3}},{id:"fi_h1",key:"heisei_eraser",pos:{x:15,y:11}},{id:"fi_h2",key:"school_note",pos:{x:4,y:11}}]},
+
+  // エリア1
+  {name:"廃墟周辺の道",bg:"#080a08",spawn:{x:9,y:1},
+   map:[[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],[1,2,3,3,2,2,2,2,2,2,2,2,2,2,3,3,3,2,2,1],[1,2,3,2,2,2,2,2,2,2,2,2,2,2,2,3,2,2,2,1],[1,2,2,2,2,4,4,4,2,2,2,4,4,2,2,2,2,2,2,1],[1,2,2,7,2,4,2,4,2,2,2,4,4,2,2,2,7,2,2,1],[1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],[1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],[1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],[1,2,3,2,2,2,2,2,2,2,2,2,2,2,2,3,3,2,2,1],[1,2,3,3,2,2,2,7,2,2,2,7,2,2,2,3,3,2,2,1],[1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],[1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],[1,2,2,2,2,2,2,2,2,5,2,2,2,2,2,2,2,2,2,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]],
+   exits:[{x:9,y:1,toArea:0,sx:9,sy:12},{x:9,y:13,toArea:2,sx:9,sy:1}],
+   boss:{pos:{x:10,y:5},spr:"son",name:"久保田 誠一",role:"長男・48歳",
+     intro:["父さん。","…どこへ行くつもりですか。","手続きがあるので、もう少し待ってください。"],
+     outro:["…わかりました。","あまり遠くへは行かないでください。","…お願いします。"],
+     data:{id:"seiichi",name:"久保田 誠一",types:["かたい","でかい"],maxHp:150,hp:150,atk:65,def:60,spd:40,level:25,moves:[{name:"長男の責任",power:50,type:"かたい",pp:20,maxPp:20},{name:"冷静な判断",power:45,type:"でかい",pp:15,maxPp:15},{name:"沈黙の圧力",power:55,type:"つめたい",pp:10,maxPp:10},{name:"本音の封鎖",power:80,type:"かたい",pp:5,maxPp:5}]}},
+   npcs:[],
+   items:[{id:"fi5",key:"candy1",pos:{x:5,y:7}},{id:"fi6",key:"card1",pos:{x:14,y:7}},{id:"fi7",key:"half_meds",pos:{x:16,y:5}},{id:"fi8",key:"glasses",pos:{x:3,y:10}},{id:"fi_m2",key:"mystery2",pos:{x:9,y:3}},{id:"fi_h3",key:"heisei_sticker",pos:{x:6,y:11}},{id:"fi_h4",key:"radio_cassette",pos:{x:13,y:11}},{id:"fi_h5",key:"old_key",pos:{x:3,y:5}}]},
+
+  // エリア2: 病院の庭（ミドリ→ハルカ連戦）
+  {name:"病院の庭",bg:"#080c0a",spawn:{x:9,y:1},
+   map:[[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],[1,2,3,3,3,3,2,2,2,2,2,2,2,3,3,3,3,2,2,1],[1,2,3,2,2,3,2,2,2,2,2,2,2,3,2,2,3,2,2,1],[1,2,3,2,2,3,2,2,2,2,2,2,2,3,2,2,3,2,2,1],[1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],[1,2,2,2,2,2,7,2,2,2,2,2,7,2,2,2,2,2,2,1],[1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],[1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],[1,2,3,3,2,2,2,2,2,2,2,2,2,2,2,3,3,2,2,1],[1,2,3,3,2,2,2,7,2,2,2,7,2,2,2,3,3,2,2,1],[1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],[1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],[1,2,2,2,2,2,2,2,2,5,2,2,2,2,2,2,2,2,2,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]],
+   exits:[{x:9,y:1,toArea:1,sx:9,sy:12},{x:9,y:13,toArea:3,sx:9,sy:1}],
+   boss:{pos:{x:9,y:6},spr:"daughter",name:"ミドリ",role:"チーフナース",
+     intro:["久保田さん、少しよろしいですか。","病室に戻りましょう。心配しています。","…言うことを聞いてくれないなら、実力行使です。"],
+     outro:["…さすがですね。","ハルカ、お願いします。"],
+     data:{id:"midori",name:"ミドリ",types:["オス","つめたい"],maxHp:160,hp:160,atk:68,def:55,spd:58,level:28,moves:[{name:"業務的優しさ",power:45,type:"オス",pp:20,maxPp:20},{name:"投薬",power:55,type:"つめたい",pp:15,maxPp:15},{name:"看護の心（回復）",power:-40,type:"オス",pp:10,maxPp:10},{name:"本来の使命",power:85,type:"オス",pp:5,maxPp:5}]},
+     chain:{id:"haruka",name:"ハルカ",role:"受付・元暗殺者",
+       intro:["笑顔でお願いします☆",".45口径　笑。"],
+       outro:["…まさか。","行ってください。"],
+       data:{id:"haruka",name:"ハルカ",types:["メス","しらん"],maxHp:190,hp:190,atk:90,def:50,spd:90,level:30,moves:[{name:"受付の笑顔",power:50,type:"メス",pp:20,maxPp:20},{name:"素早い手",power:70,type:"しらん",pp:12,maxPp:12},{name:"元の仕事",power:90,type:"メス",pp:8,maxPp:8},{name:".45口径　笑",power:115,type:"メス",pp:3,maxPp:3}]}}},
+   npcs:[],
+   items:[{id:"fi9",key:"nameplate",pos:{x:5,y:3}},{id:"fi10",key:"letter_draft",pos:{x:14,y:3}},{id:"fi11",key:"cane",pos:{x:3,y:6}},{id:"fi12",key:"half_meds",pos:{x:16,y:10}},{id:"fi_m3",key:"mystery3",pos:{x:9,y:9}},{id:"fi_h6",key:"heisei_game",pos:{x:15,y:6}},{id:"fi_h7",key:"notebook",pos:{x:4,y:9}}]},
+
+  // エリア3: 病院内部（ショウヘイ2段階）
+  {name:"病院内部",bg:"#08080c",spawn:{x:9,y:1},
+   map:[[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],[1,2,4,4,2,2,2,2,2,2,2,2,2,2,2,4,4,2,2,1],[1,2,4,2,2,7,2,2,2,2,2,2,2,7,2,2,4,2,2,1],[1,2,2,2,2,2,2,2,1,1,1,1,2,2,2,2,2,2,2,1],[1,2,2,2,2,2,2,2,1,4,4,1,2,2,2,2,2,2,2,1],[1,2,2,7,2,2,2,2,1,4,4,1,2,2,2,7,2,2,2,1],[1,2,2,2,2,2,2,2,1,4,4,1,2,2,2,2,2,2,2,1],[1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],[1,2,4,2,2,2,2,2,2,2,2,2,2,2,2,2,4,2,2,1],[1,2,4,4,2,2,2,7,2,2,2,7,2,2,2,4,4,2,2,1],[1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],[1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],[1,2,2,2,2,2,2,2,2,5,2,2,2,2,2,2,2,2,2,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]],
+   exits:[{x:9,y:1,toArea:2,sx:9,sy:12},{x:9,y:13,toArea:4,sx:9,sy:1}],
+   boss:{pos:{x:15,y:6},spr:"son",name:"ショウヘイ",role:"作業療法士",
+     intro:["あきらめないでください！","体を動かすことが、生きることです！","行きます！"],
+     outro:["くっ…まだです！","第2形態！"],
+     data:{id:"shouhei",name:"ショウヘイ",types:["メス","かたい"],maxHp:180,hp:180,atk:75,def:70,spd:55,level:33,moves:[{name:"リハビリ",power:50,type:"メス",pp:20,maxPp:20},{name:"熱血指導",power:65,type:"かたい",pp:15,maxPp:15},{name:"限界突破",power:80,type:"メス",pp:10,maxPp:10},{name:"諦めない心",power:95,type:"かたい",pp:5,maxPp:5}]},
+     chain:{id:"shouhei2",name:"ショウヘイ（本気）",role:"作業療法士・開眼",
+       intro:["まだ終わらせません！","行きます、本気で！"],
+       outro:["…すごい。","本当に、諦めない人だ。","行ってください。"],
+       data:{id:"shouhei2",name:"ショウヘイ（本気）",types:["メス","オス"],maxHp:220,hp:220,atk:95,def:75,spd:70,level:35,moves:[{name:"魂のリハビリ",power:70,type:"メス",pp:15,maxPp:15},{name:"熱血覚醒",power:85,type:"オス",pp:10,maxPp:10},{name:"魂の叫び",power:100,type:"メス",pp:7,maxPp:7},{name:"諦めない魂",power:120,type:"オス",pp:4,maxPp:4}]}}},
+   npcs:[],
+   items:[{id:"fi13",key:"wedding_photo",pos:{x:6,y:6}},{id:"fi14",key:"rehab_record",pos:{x:13,y:6}},{id:"fi15",key:"ointment",pos:{x:3,y:9}},{id:"fi_m4",key:"mystery4",pos:{x:16,y:3}},{id:"fi_m5",key:"mystery5",pos:{x:3,y:3}},{id:"fi_h8",key:"tv_guide",pos:{x:9,y:3}},{id:"fi_h9",key:"stabilizer",pos:{x:16,y:9}}]},
+
+  // エリア4: 病院の奥（タツヤ→澄子連戦）
+  {name:"病院の奥",bg:"#0a080c",spawn:{x:9,y:1},
+   map:[[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],[1,2,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,2,2,1],[1,2,4,2,2,2,2,2,2,2,2,2,2,2,2,2,4,2,2,1],[1,2,4,2,2,7,2,2,2,2,2,2,2,7,2,2,4,2,2,1],[1,2,4,2,2,2,2,2,2,2,2,2,2,2,2,2,4,2,2,1],[1,2,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,2,2,1],[1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],[1,2,2,2,7,2,2,2,2,2,2,2,2,2,7,2,2,2,2,1],[1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],[1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],[1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],[1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],[1,2,2,2,2,2,2,2,2,5,2,2,2,2,2,2,2,2,2,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]],
+   exits:[{x:9,y:1,toArea:3,sx:9,sy:12},{x:9,y:13,toArea:5,sx:9,sy:1}],
+   boss:{pos:{x:10,y:8},spr:"son",name:"タツヤ",role:"主治医",
+     intro:["久保田さん。","…ずっと伝えられなかったことがあります。","でも今は、向き合わなければ。"],
+     outro:["…やはり。","隠してきたことを、許してください。","澄子さんが待っています。"],
+     data:{id:"tatsuya",name:"タツヤ（主治医）",types:["かたい","つめたい"],maxHp:200,hp:200,atk:78,def:72,spd:50,level:38,moves:[{name:"病状説明",power:55,type:"かたい",pp:18,maxPp:18},{name:"隠された事実",power:70,type:"つめたい",pp:12,maxPp:12},{name:"医師の責任",power:85,type:"かたい",pp:8,maxPp:8},{name:"真実の告白",power:105,type:"オス",pp:4,maxPp:4}]},
+     chain:{id:"sumiko",name:"久保田 澄子",role:"妻・71歳",
+       intro:["あなた。","…やっと会えた。","ずっと待っていたよ。"],
+       introAngry:["あなた…","…その人、誰。","…知ってた。知ってたよ。ずっと。","許さない。"],
+       outro:["…もう少しだけ、ここにいて。","でも、行くなら行きなさい。","わかってるから。"],
+       outroAngry:["…行きなさい。","でも、あの人とは行かないで。","それだけ。"],
+       data:{id:"sumiko",name:"久保田 澄子",types:["オス","かたい"],maxHp:260,hp:260,atk:88,def:90,spd:55,level:42,moves:[{name:"71年の愛",power:65,type:"オス",pp:20,maxPp:20},{name:"ずっと待ってた",power:80,type:"オス",pp:15,maxPp:15},{name:"わかってるから",power:95,type:"かたい",pp:10,maxPp:10},{name:"最強の妻",power:120,type:"オス",pp:4,maxPp:4}]},
+       dataAngry:{id:"sumiko_angry",name:"久保田 澄子（激怒）",types:["オス","かたい"],maxHp:320,hp:320,atk:115,def:90,spd:70,level:45,moves:[{name:"知ってたんだよ",power:80,type:"オス",pp:18,maxPp:18},{name:"71年分の怒り",power:100,type:"かたい",pp:12,maxPp:12},{name:"許さない",power:120,type:"オス",pp:8,maxPp:8},{name:"最強の妻（本気）",power:150,type:"かたい",pp:3,maxPp:3}]}}},
+   npcs:[],
+   items:[{id:"fi16",key:"ring",pos:{x:5,y:4}},{id:"fi17",key:"family_photo",pos:{x:14,y:4}},{id:"fi18",key:"cold_tea",pos:{x:9,y:8}},{id:"fi_m6",key:"mystery6",pos:{x:3,y:8}},{id:"fi_m7",key:"mystery7",pos:{x:16,y:8}},{id:"fi_ha",key:"coin",pos:{x:9,y:5}}]},
+
+  // エリア5: 内なる場所（久保田 正雄・最終ボス）
+  {name:"内なる場所",bg:"#060608",spawn:{x:9,y:1},
+   map:[[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,1],[1,3,2,2,2,2,3,3,2,2,2,2,3,3,2,2,2,2,3,1],[1,3,2,4,2,2,3,3,2,4,4,2,3,3,2,4,2,2,3,1],[1,3,2,2,2,2,3,3,2,2,2,2,3,3,2,2,2,2,3,1],[1,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,1],[1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],[1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],[1,2,2,2,2,2,7,2,2,2,2,2,7,2,2,2,2,2,2,1],[1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],[1,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,1],[1,3,2,2,2,2,3,3,2,2,2,2,3,3,2,2,2,2,3,1],[1,3,2,2,2,2,3,3,2,2,2,2,3,3,2,2,2,2,3,1],[1,2,2,2,2,2,2,2,2,7,2,2,2,2,2,2,2,2,2,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]],
+   exits:[{x:9,y:1,toArea:4,sx:9,sy:12}],
+   boss:{pos:{x:10,y:7},spr:"grandpa",name:"久保田 正雄",role:"内なる自分",
+     intro:["…誰だ。","…俺か。","帰るのか。それとも、まだここにいるのか。"],
+     outro:["…そうか。","好きにしろ。","ただ…","…覚えていてくれ。"],
+     data:{id:"masao",name:"久保田 正雄",types:["オス","かたい"],maxHp:300,hp:300,atk:90,def:90,spd:65,level:50,moves:[{name:"忘れかけた名前",power:70,type:"オス",pp:18,maxPp:18},{name:"若い頃の俺",power:85,type:"かたい",pp:12,maxPp:12},{name:"消えていく記憶",power:100,type:"オス",pp:8,maxPp:8},{name:"正雄の意地",power:130,type:"かたい",pp:4,maxPp:4}]}},
+   npcs:[],
+   items:[{id:"fi19",key:"mirror",pos:{x:5,y:8}},{id:"fi20",key:"yomei_full",pos:{x:14,y:8}},{id:"fi_hb",key:"notebook",pos:{x:9,y:6}}]}
+];
+
+const STARTERS=[
+  {id:"larva",name:"虫かご（閉じてる）",spr:"larva1",types:["つめたい","オス"],maxHp:40,hp:40,atk:28,def:35,spd:25,level:5,exp:0,color:"#8B7355",
+   desc:"夏の終わりに、フタを閉めたまま押し入れに入れた。秋になって、冬になって、開けるのが怖くてそのままにしている"},
+  {id:"kitten",name:"猫だ",spr:"kitten1",types:["つめたい","オス"],maxHp:35,hp:35,atk:38,def:25,spd:55,level:5,exp:0,color:"#7F8C8D",
+   desc:"拾ったのか、元からいたのか覚えていない。毛が多い。胴が長い。猫だと思っている。たぶん。"},
+  {id:"goldfish",name:"金魚",spr:"fish1",types:["くさい","オス"],maxHp:40,hp:40,atk:35,def:30,spd:45,level:5,exp:0,color:"#E74C3C",
+   desc:"縁日で取った。三日で死ぬと思っていた。気づいたら鉢が小さくなっていた"}
+];
+STARTERS.forEach(s=>{s.moves=buildMoves(s.id,s.level);});
+
+const GRANNY_C={id:"granny_c",name:"縁側のおばあさん",spr:"granny",types:["オス","つめたい"],maxHp:60,hp:60,atk:45,def:50,spd:30,level:10,exp:0,color:"#8e44ad",moves:[{name:"静かな眼差し",power:35,type:"オス",pp:30,maxPp:30},{name:"縁側の記憶",power:45,type:"つめたい",pp:20,maxPp:20},{name:"昔話",power:55,type:"オス",pp:15,maxPp:15},{name:"覚悟の別れ",power:70,type:"つめたい",pp:8,maxPp:8}]};
+
+function mkWild(area){
+  const pools=[
+    [{id:"crow",lv:3,maxHp:30,atk:28,def:18,spd:35,spr:"crow",color:"#222"},{id:"rat",lv:2,maxHp:25,atk:22,def:14,spd:40,spr:"rat",color:"#7F8C8D"}],
+    [{id:"crow",lv:5,maxHp:35,atk:32,def:20,spd:38,spr:"crow",color:"#222"},{id:"rat",lv:4,maxHp:30,atk:26,def:16,spd:42,spr:"rat",color:"#7F8C8D"}],
+    [{id:"crow",lv:8,maxHp:42,atk:38,def:24,spd:42,spr:"crow",color:"#222"},{id:"rat",lv:7,maxHp:38,atk:32,def:20,spd:46,spr:"rat",color:"#7F8C8D"}],
+    [{id:"crow",lv:12,maxHp:50,atk:44,def:28,spd:46,spr:"crow",color:"#222"},{id:"rat",lv:11,maxHp:45,atk:38,def:24,spd:50,spr:"rat",color:"#7F8C8D"}],
+    [{id:"crow",lv:16,maxHp:60,atk:52,def:34,spd:52,spr:"crow",color:"#222"},{id:"rat",lv:15,maxHp:54,atk:46,def:30,spd:56,spr:"rat",color:"#7F8C8D"}],
+    [{id:"crow",lv:20,maxHp:70,atk:60,def:40,spd:58,spr:"crow",color:"#222"},{id:"rat",lv:18,maxHp:62,atk:54,def:36,spd:62,spr:"rat",color:"#7F8C8D"}]
+  ];
+  const pool=pools[Math.min(area,pools.length-1)];
+  const b=pool[Math.floor(Math.random()*pool.length)];
+  return{...b,hp:b.maxHp,name:ID2EVO[b.id]?.name||b.id,level:b.lv,types:b.id==="crow"?["しらん","つめたい"]:["メス","しらん"],exp:0,moves:buildMoves(b.id,b.lv)};
+}
+function drawSpr(ctx,key,fi,x,y,sc=2){const s=SPRITES[key];if(!s)return;const f=s.frames[fi%s.frames.length];for(let py=0;py<s.h;py++)for(let px2=0;px2<s.w;px2++){const col=PAL[f[py*s.w+px2]];if(!col||col==="transparent")continue;ctx.fillStyle=col;ctx.fillRect(x+px2*sc,y+py*sc,sc,sc);}}
+const TC={[WALL]:"#1a1a2e",[GRASS]:"#0d1f0d",[TALL]:"#0a2a0a",[STONE]:"#2a2a2a",[DOOR]:"#3d2b00",[HEAL]:"#001f1f"};
+const TA={[WALL]:"#0a0a1a",[GRASS]:"#1a3a1a",[TALL]:"#0f3f0f",[STONE]:"#333",[DOOR]:"#7a5500",[HEAL]:"#003333"};
+function drawTile(ctx,t,px2,py2,isExit=false,pulse=0){ctx.fillStyle=TC[t]||"#111";ctx.fillRect(px2,py2,TILE,TILE);ctx.fillStyle=TA[t]||"#222";ctx.fillRect(px2,py2,TILE,1);ctx.fillRect(px2,py2,1,TILE);if(t===TALL){for(let i=0;i<4;i++){ctx.fillStyle=i%2===0?"#1a4a1a":"#0f350f";ctx.fillRect(px2+4+i*7,py2+10,3,12);ctx.fillRect(px2+6+i*7,py2+6,2,14);}}if(t===STONE){ctx.fillStyle="#3a3a3a";ctx.fillRect(px2+4,py2+4,TILE-8,TILE-8);}if(t===DOOR){ctx.fillStyle="#5a3800";ctx.fillRect(px2+6,py2+2,20,28);ctx.fillStyle="#7a5500";ctx.fillRect(px2+7,py2+3,18,26);ctx.fillStyle="#3a2200";ctx.fillRect(px2+13,py2+3,2,26);ctx.fillStyle="#ffcc00";ctx.fillRect(px2+21,py2+14,3,4);if(isExit){const a=pulse*0.5+0.3;ctx.fillStyle=`rgba(255,200,50,${a})`;ctx.fillRect(px2+2,py2+1,TILE-4,3);ctx.fillRect(px2+2,py2+1,3,TILE-3);ctx.fillRect(px2+TILE-5,py2+1,3,TILE-3);ctx.font="bold 8px sans-serif";ctx.fillStyle=`rgba(255,220,100,${a+0.2})`;ctx.textAlign="center";ctx.fillText("NEXT",px2+TILE/2,py2+TILE-3);}}if(t===HEAL){ctx.fillStyle="#004444";ctx.fillRect(px2+6,py2+6,TILE-12,TILE-12);ctx.fillStyle="#00aaaa";ctx.fillRect(px2+14,py2+8,4,16);ctx.fillRect(px2+8,py2+14,16,4);}}
+
+const INIT_GS={pos:WORLD[0].spawn,area:0,party:[],caught:[],inventory:[],memoryItems:[],pickedItems:[],defeatedBosses:[],grannyJoined:false,grannyTalkCount:0,seenChars:[]};
+function save(gs){try{localStorage.setItem("grimoria_v7",JSON.stringify(gs));}catch(e){}}
+function load(){try{const r=localStorage.getItem("grimoria_v7");if(!r)return null;const d=JSON.parse(r);if(d.party){d.party=d.party.filter(c=>c&&c.id&&Array.isArray(c.moves));}return d;}catch(e){}return null;}
+const BS=(bg,bd,ex={})=>({background:bg,border:`1px solid ${bd}`,color:"#ccbbaa",padding:"10px 14px",fontFamily:"serif",fontSize:13,cursor:"pointer",letterSpacing:1,...ex});
+
+function CreatureCanvas({spr,color,size=40,scale}){const ref=useRef(null);const t=useRef(0);const sc=scale||(spr&&SPRITES[spr]?.w<=12?Math.floor(size/12):Math.floor(size/16))||2;useEffect(()=>{const id=setInterval(()=>{t.current++;const c=ref.current;if(!c)return;const ctx=c.getContext("2d");ctx.imageSmoothingEnabled=false;ctx.fillStyle="#0a0508";ctx.fillRect(0,0,size,size);if(spr&&SPRITES[spr]){const s=SPRITES[spr];const fw=s.w*sc,fh=s.h*sc;drawSpr(ctx,spr,Math.floor(t.current/20)%s.frames.length,Math.floor((size-fw)/2),Math.max(0,Math.floor((size-fh)/2)),sc);}else if(color){ctx.fillStyle=color;ctx.beginPath();ctx.arc(size/2,size/2,size*0.35,0,Math.PI*2);ctx.fill();}},150);return()=>clearInterval(id);},[spr,color,size,sc]);return <canvas ref={ref} width={size} height={size} style={{imageRendering:"pixelated",flexShrink:0}}/>;}
+function HpBar({hp,maxHp,w="100%",h=6}){const pct=hp/maxHp;return <div style={{width:w,height:h,background:"#1a0a0a"}}><div style={{width:`${pct*100}%`,height:"100%",background:pct>0.5?"#1a7a1a":pct>0.2?"#7a7a00":"#7a1a1a",transition:"width .3s"}}/></div>;}
+function ExpBar({exp,lv}){const pct=lv>=MAX_LEVEL?1:Math.min(1,(exp||0)/expNeeded(lv+1));return <div style={{height:3,background:"#0a0820"}}><div style={{width:`${pct*100}%`,height:"100%",background:"#2244aa"}}/></div>;}
+function Dbtn({label,onClick}){return <button onClick={onClick} style={{width:52,height:52,background:"#1a0a0a",border:"1px solid #3d2020",color:"#8b6060",fontSize:18,cursor:"pointer",userSelect:"none",WebkitUserSelect:"none"}}>{label}</button>;}
+function FadeOverlay({active}){if(!active)return null;return <div style={{position:"fixed",inset:0,background:"#000",zIndex:500,pointerEvents:"none"}}/>;}
+function TitleScreen({onNew,onContinue,hasSave}){
+  const ref=useRef(null);const t=useRef(0);
+  useEffect(()=>{const id=setInterval(()=>{t.current++;const c=ref.current;if(!c)return;const ctx=c.getContext("2d");ctx.imageSmoothingEnabled=false;
+    // 背景
+    ctx.fillStyle="#050305";ctx.fillRect(0,0,400,360);
+    // 星っぽい粒
+    for(let i=0;i<80;i++){const sx=(i*137+t.current*.2)%390+5,sy=(i*73)%280+5,b=Math.sin(t.current*.04+i)*.5+.5;ctx.fillStyle=`rgba(220,200,160,${b*.5})`;ctx.fillRect(sx,sy,1,1);}
+    // タイトル背景帯
+    ctx.fillStyle="rgba(0,0,0,0.7)";ctx.fillRect(0,30,400,90);
+    ctx.fillStyle="#5a0000";ctx.fillRect(0,30,400,2);
+    ctx.fillStyle="#5a0000";ctx.fillRect(0,118,400,2);
+    // タイトル文字
+    ctx.font="bold 32px serif";ctx.fillStyle="#ffffff";ctx.textAlign="center";ctx.shadowColor="#cc3300";ctx.shadowBlur=12;
+    ctx.fillText("たぶん、帰れる",200,80);
+    ctx.shadowBlur=0;
+    // サブタイトル
+    ctx.font="13px serif";ctx.fillStyle="#ccaa88";
+    ctx.fillText("久保田 正雄（74歳）の場合",200,108);
+    // キャラ
+    drawSpr(ctx,"grandpa",Math.floor(t.current/18)%3,172,128,4);
+    // テキスト（フェード）
+    const a=Math.sin(t.current*.03)*.4+.6;
+    ctx.font="13px serif";ctx.fillStyle=`rgba(220,200,170,${a})`;
+    ctx.fillText("── 目が覚めた ──",200,270);
+    ctx.font="12px serif";ctx.fillStyle=`rgba(190,170,140,${a*.9})`;
+    ctx.fillText("ここは…どこだ。暗い。冷たい。",200,292);
+    ctx.fillText("帰らなければ。…どこへ？",200,312);
+  },50);return()=>clearInterval(id);},[]);
+  return(<div style={{display:"flex",flexDirection:"column",alignItems:"center",background:"#050305",minHeight:"100vh",fontFamily:"serif"}}>
+    <canvas ref={ref} width={400} height={360} style={{imageRendering:"pixelated",width:"100%",maxWidth:400}}/>
+    <div style={{display:"flex",flexDirection:"column",gap:12,width:"80%",maxWidth:280,padding:"16px 0 40px"}}>
+      <button onClick={onNew} style={{background:"#3d0000",border:"2px solid #cc3300",color:"#ffffff",fontSize:16,padding:"14px 0",cursor:"pointer",fontFamily:"serif",letterSpacing:2}}>はじめる</button>
+      {hasSave&&<button onClick={onContinue} style={{background:"#001a1a",border:"2px solid #00aaaa",color:"#aaffff",fontSize:14,padding:"12px 0",cursor:"pointer",fontFamily:"serif",letterSpacing:2}}>つづきから</button>}
+    </div>
+  </div>);
+}
+
+function SelectScreen({onSelect}){
+  const [sel,setSel]=useState(null);
+  return(<div style={{background:"#050305",minHeight:"100vh",fontFamily:"serif",padding:14,maxWidth:400,margin:"0 auto"}}><div style={{textAlign:"center",borderBottom:"1px solid #3d2b2b",paddingBottom:10,marginBottom:14}}><div style={{color:"#8b4040",fontSize:11,letterSpacing:3}}>── 仲間を選べ ──</div><div style={{color:"#6a5a5a",fontSize:10,marginTop:4}}>連れて行くものを、ひとつだけ</div></div>{STARTERS.map(s=>{const ev=EVO[s.id];return(<div key={s.id} onClick={()=>setSel(s.id)} style={{background:sel===s.id?"#1a0a0a":"#0a0505",border:`1px solid ${sel===s.id?"#8b0000":"#2d1a1a"}`,padding:12,marginBottom:10,cursor:"pointer"}}><div style={{display:"flex",gap:10,alignItems:"center"}}><CreatureCanvas spr={s.spr} color={s.color} size={56}/><div style={{flex:1}}><div style={{color:"#ccbbaa",fontSize:13}}>{s.name}</div><div style={{color:"#8b6060",fontSize:10,margin:"2px 0"}}>{s.types.join("・")}</div><div style={{display:"flex",gap:8,fontSize:10,color:"#6a5050"}}><span>HP{s.maxHp}</span><span>攻{s.atk}</span><span>防{s.def}</span><span>速{s.spd}</span></div>{ev&&<div style={{color:"#4a3a2a",fontSize:9,marginTop:3}}>Lv.{ev[0].evoAt}→{ev[1]?.name} / Lv.{ev[1]?.evoAt}→{ev[2]?.name}</div>}</div></div><div style={{color:"#5a4a4a",fontSize:10,marginTop:8,fontStyle:"italic",lineHeight:1.5}}>「{s.desc}」</div></div>);})}{sel&&<button onClick={()=>onSelect(STARTERS.find(s=>s.id===sel))} style={BS("#3d0000","#cc3300",{width:"100%",marginTop:4})}>これを連れて行く</button>}</div>);
+}
+
+function MapScreen({gs,setGs,onBattle,onMsg}){
+  const ref=useRef(null);const gsRef=useRef(gs);gsRef.current=gs;
+  const af=useRef(0);const wfi=useRef(0);const busy=useRef(false);
+  const [fading,setFading]=useState(false);
+  const ar=WORLD[gs.area]||WORLD[0];
+  const WALK_SEQ=[0,1,0,2];
+  const exitSet=new Set((ar.exits||[]).filter(e=>e.toArea!==gs.area).map(e=>`${e.x},${e.y}`));
+
+  useEffect(()=>{
+    let raf;
+    const render=()=>{
+      af.current++;
+      const cv=ref.current;if(!cv){raf=requestAnimationFrame(render);return;}
+      const ctx=cv.getContext("2d");ctx.imageSmoothingEnabled=false;
+      const g=gsRef.current;const a=WORLD[g.area]||WORLD[0];
+      const cx=Math.max(0,Math.min(MAP_W-VIEW_W,g.pos.x-Math.floor(VIEW_W/2)));
+      const cy=Math.max(0,Math.min(MAP_H-VIEW_H,g.pos.y-Math.floor(VIEW_H/2)));
+      ctx.fillStyle=a.bg;ctx.fillRect(0,0,VIEW_W*TILE,VIEW_H*TILE);
+      const pulse=Math.sin(af.current*0.08)*0.5+0.5;
+      for(let ty=0;ty<VIEW_H;ty++)for(let tx=0;tx<VIEW_W;tx++){const mx=cx+tx,my=cy+ty;if(mx>=0&&mx<MAP_W&&my>=0&&my<MAP_H)drawTile(ctx,a.map[my][mx],tx*TILE,ty*TILE,exitSet.has(`${mx},${my}`),pulse);}
+      a.items&&a.items.forEach(fi=>{if((g.pickedItems||[]).includes(fi.id))return;const sx=(fi.pos.x-cx)*TILE,sy=(fi.pos.y-cy)*TILE;if(sx<0||sy<0||sx>=VIEW_W*TILE||sy>=VIEW_H*TILE)return;if(Math.sin(af.current*.12)>0){ctx.fillStyle="#ffcc00";ctx.font="bold 18px serif";ctx.textAlign="center";ctx.fillText("✦",sx+TILE/2,sy+TILE*.75);}});
+      a.npcs&&a.npcs.forEach(n=>{if(n.id==="granny"&&g.grannyJoined)return;const sx=(n.pos.x-cx)*TILE,sy=(n.pos.y-cy)*TILE;if(SPRITES[n.spr])drawSpr(ctx,n.spr,0,sx,sy-12,2);});
+      if(a.boss&&!(g.defeatedBosses||[]).includes(a.boss.data.id)){const bx=(a.boss.pos.x-cx)*TILE,by=(a.boss.pos.y-cy)*TILE;if(SPRITES[a.boss.spr])drawSpr(ctx,a.boss.spr,0,bx,by-12,2);}
+      drawSpr(ctx,"grandpa",WALK_SEQ[wfi.current],(g.pos.x-cx)*TILE,(g.pos.y-cy)*TILE-12,2);
+      raf=requestAnimationFrame(render);
+    };
+    raf=requestAnimationFrame(render);return()=>cancelAnimationFrame(raf);
+  },[exitSet]);
+
+  const move=useCallback((dx,dy)=>{
+    if(busy.current)return;
+    const g=gsRef.current;const a=WORLD[g.area]||WORLD[0];
+    const nx=g.pos.x+dx,ny=g.pos.y+dy;
+    if(nx<0||nx>=MAP_W||ny<0||ny>=MAP_H)return;
+    if(a.map[ny][nx]===WALL||a.map[ny][nx]===STONE)return;
+    wfi.current=(wfi.current+1)%4;
+    // 前進扉（次のエリアへ）- ボス未撃破ならブロック
+    const exFwd=a.exits&&a.exits.find(e=>e.x===nx&&e.y===ny&&e.toArea>g.area);
+    if(exFwd){
+      const bossDefeated=!a.boss||(g.defeatedBosses||[]).includes(a.boss.data.id);
+      if(!bossDefeated){onMsg({type:"talk",speaker:"",text:"…まだここを通れない気がする。",cb:()=>{}});return;}
+      busy.current=true;setFading(true);setTimeout(()=>{setGs(p=>{const n={...p,pos:{x:exFwd.sx,y:exFwd.sy},area:exFwd.toArea};save(n);return n;});setTimeout(()=>{setFading(false);busy.current=false;},200);},350);return;
+    }
+    // 後退扉（前のエリアへ）- 常に通れる
+    const exBack=a.exits&&a.exits.find(e=>e.x===nx&&e.y===ny&&e.toArea<g.area);
+    if(exBack){busy.current=true;setFading(true);setTimeout(()=>{setGs(p=>{const n={...p,pos:{x:exBack.sx,y:exBack.sy},area:exBack.toArea};save(n);return n;});setTimeout(()=>{setFading(false);busy.current=false;},200);},350);return;}
+    const fi=a.items&&a.items.find(f=>f.pos.x===nx&&f.pos.y===ny&&!(g.pickedItems||[]).includes(f.id));
+    if(fi){busy.current=true;const itDef=ITEMS[fi.key];setGs(p=>{const n={...p,pos:{x:nx,y:ny},pickedItems:[...(p.pickedItems||[]),fi.id]};if(itDef.type==="heal"||itDef.type==="pp")n.inventory=[...(p.inventory||[]),{...itDef,_uid:fi.id}];if(itDef.type==="memory")n.memoryItems=[...(p.memoryItems||[]),{...itDef,_uid:fi.id}];save(n);return n;});onMsg({type:"item",item:itDef,cb:()=>{busy.current=false;}});return;}
+    const npc=a.npcs&&a.npcs.find(n=>n.pos.x===nx&&n.pos.y===ny);
+    if(npc&&!(g.grannyJoined)){busy.current=true;setGs(p=>{const idx=p.grannyTalkCount||0;const text=npc.talks[Math.min(idx,npc.talks.length-1)];const nc=Math.min(idx+1,npc.talks.length-1);const justJoin=nc>=29&&!p.grannyJoined;let n={...p,pos:{x:nx,y:ny},grannyTalkCount:nc};if(justJoin){n.grannyJoined=true;if(n.party.length<MAX_PARTY)n.party=[...n.party,{...GRANNY_C}];}const sc=[...(n.seenChars||[])];if(!sc.includes("granny_npc"))sc.push("granny_npc");n.seenChars=sc;save(n);onMsg({type:"talk",speaker:"老婆",text,joinMsg:justJoin?"縁側のおばあさんが仲間に加わった。":null,cb:()=>{busy.current=false;}});return n;});return;}
+    if(a.boss&&!(g.defeatedBosses||[]).includes(a.boss.data.id)){if(Math.abs(a.boss.pos.x-nx)<=1&&Math.abs(a.boss.pos.y-ny)<=1){busy.current=true;const bid=a.boss.data.id;setGs(p=>{const sc=[...(p.seenChars||[])];if(!sc.includes(bid))sc.push(bid);return{...p,pos:{x:nx,y:ny},seenChars:sc};});onBattle({boss:a.boss,cb:()=>{busy.current=false;}});return;}}
+    if((a.map[ny][nx]===TALL||a.map[ny][nx]===GRASS)&&Math.random()<0.1){busy.current=true;setGs(p=>({...p,pos:{x:nx,y:ny}}));onBattle({wild:mkWild(g.area),cb:()=>{busy.current=false;}});return;}
+    setGs(p=>{const n={...p,pos:{x:nx,y:ny}};if(Math.random()<.08)save(n);return n;});
+  },[onBattle,onMsg,setGs,exitSet]);
+
+  useEffect(()=>{const h=e=>{if(e.key==="ArrowUp"||e.key==="w")move(0,-1);if(e.key==="ArrowDown"||e.key==="s")move(0,1);if(e.key==="ArrowLeft"||e.key==="a")move(-1,0);if(e.key==="ArrowRight"||e.key==="d")move(1,0);};window.addEventListener("keydown",h);return()=>window.removeEventListener("keydown",h);},[move]);
+
+  const lead=gs.party[0];
+  return(
+    <div style={{background:"#050305",maxWidth:400,margin:"0 auto",display:"flex",flexDirection:"column",minHeight:"100vh",position:"relative"}}>
+      <FadeOverlay active={fading}/>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"5px 10px",background:"#0a0505",borderBottom:"1px solid #1a0a0a"}}>
+        <span style={{color:"#6a5050",fontSize:11,fontFamily:"serif"}}>{ar.name}</span>
+        <button onClick={()=>onMsg({type:"menu"})} style={{background:"none",border:"1px solid #3d2020",color:"#8b6060",fontSize:11,padding:"3px 10px",cursor:"pointer",fontFamily:"serif"}}>メニュー</button>
+      </div>
+      <canvas ref={ref} width={VIEW_W*TILE} height={VIEW_H*TILE} style={{imageRendering:"pixelated",width:"100%",maxWidth:400}}/>
+      <div style={{background:"#070307",padding:"6px 0 4px",borderTop:"1px solid #1a0a0a"}}>
+        <div style={{display:"flex",justifyContent:"center",gap:6}}><div style={{width:52}}/><Dbtn label="▲" onClick={()=>move(0,-1)}/><div style={{width:52}}/></div>
+        <div style={{display:"flex",justifyContent:"center",gap:6,marginTop:4}}><Dbtn label="◄" onClick={()=>move(-1,0)}/><Dbtn label="●" onClick={()=>{}}/><Dbtn label="►" onClick={()=>move(1,0)}/></div>
+        <div style={{display:"flex",justifyContent:"center",gap:6,marginTop:4}}><div style={{width:52}}/><Dbtn label="▼" onClick={()=>move(0,1)}/><div style={{width:52}}/></div>
+      </div>
+      {lead&&(<div style={{background:"#0a0505",padding:"5px 12px",borderTop:"1px solid #1a0a0a",display:"flex",alignItems:"center",gap:8}}><CreatureCanvas spr={lead.spr} color={lead.color} size={36}/><div style={{flex:1}}><div style={{display:"flex",justifyContent:"space-between"}}><span style={{color:"#ccbbaa",fontSize:11,fontFamily:"serif"}}>{lead.name} Lv.{lead.level}</span><span style={{color:"#6a5a5a",fontSize:10}}>{lead.hp}/{lead.maxHp}</span></div><HpBar hp={lead.hp} maxHp={lead.maxHp}/><ExpBar exp={lead.exp} lv={lead.level}/></div></div>)}
+    </div>
+  );
+}
+
+
+function BattleScreen({party,grannyJoined,enemy,isBoss,bossData,onEnd,onDropItem}){
+  const [lp,setLp]=useState(()=>JSON.parse(JSON.stringify(party)));
+  const [foe,setFoe]=useState(()=>JSON.parse(JSON.stringify(enemy)));
+  const [log,setLog]=useState(()=>isBoss?[bossData.intro[0]]:[`野生の${enemy.name}が現れた！`]);
+  const [phase,setPhase]=useState(isBoss?"intro":"select");
+  const [iIdx,setIIdx]=useState(0);
+  const [pend,setPend]=useState({learns:[],evo:null,res:null,party:null});
+  const [learnNew,setLearnNew]=useState(null);
+  const [swapMode,setSwapMode]=useState(false);
+  // 連戦チェーン: chain={id,name,role,intro,outro,data}
+  const [chainBoss,setChainBoss]=useState(()=>{
+    if(!isBoss||!bossData?.chain)return null;
+    if(bossData.chain.id==="sumiko"&&grannyJoined){
+      return{...bossData.chain,data:bossData.chain.dataAngry,intro:bossData.chain.introAngry,outro:bossData.chain.outroAngry};
+    }
+    return bossData.chain;
+  });
+  const addLog=m=>setLog(p=>[...p.slice(-4),m]);
+  const mon=lp[0];
+
+  const nextIntro=()=>{const ni=iIdx+1;if(ni<bossData.intro.length){setIIdx(ni);addLog(bossData.intro[ni]);}else setPhase("select");};
+
+  const doAtk=mv=>{
+    if(phase!=="select")return;
+    setPhase("busy");
+    const dmg=calcDmg(mon.atk,foe.def,mv.power);
+    const nfHp=Math.max(0,foe.hp-dmg);
+    setFoe(f=>({...f,hp:nfHp}));
+    addLog(`${mon.name}の${mv.name}！ ${dmg}ダメージ！`);
+    const updLp=lp.map((c,i)=>i===0?{...c,moves:c.moves.map(m=>m.name===mv.name?{...m,pp:Math.max(0,m.pp-1)}:m)}:c);
+    setLp(updLp);
+    if(nfHp<=0){
+      // 連戦チェックがあるか？
+      if(chainBoss){
+        // 連戦へ
+        addLog(bossData.outro?.[0]||`${foe.name}を倒した！`);
+        setTimeout(()=>{
+          addLog(chainBoss.intro[0]);
+          setFoe({...chainBoss.data});
+          setChainBoss(null); // チェーン消費
+          setPhase("chainIntro");
+        },800);
+        return;
+      }
+      const expG=foe.level*60;let learnQ=[],evo=null;
+      const fp=updLp.map((c,i)=>{if(i!==0)return c;const r=gainExp(c,expG);r.newMovesToLearn.forEach(m=>{if(!r.creature.moves.find(x=>x.name===m.name))learnQ.push(m);});if(r.evolutions.length>0)evo=r.evolutions[r.evolutions.length-1];addLog(`${r.creature.name}にEXP+${expG}！`);if(r.levelUps.length>0)addLog(`Lv.${r.levelUps[r.levelUps.length-1]}！★PP全回復`);return r.creature;});
+      // 野生から養命種ドロップ
+      if(!isBoss&&Math.random()<0.08)setTimeout(()=>onDropItem&&onDropItem("yomei"),400);
+      setLp(fp);setPend({learns:learnQ,evo,res:"win",party:fp});
+      // 技が4未満なら自動追加、4つなら入れ替え選択
+      let fpAfterLearn=fp;
+      const autoLearn=[];
+      const needReplace=[];
+      learnQ.forEach(mv=>{
+        const curMoves=fpAfterLearn[0].moves;
+        if(curMoves.length<4){
+          fpAfterLearn=fpAfterLearn.map((c,i)=>i===0?{...c,moves:[...c.moves,{...mv}]}:c);
+          autoLearn.push(mv.name);
+        } else {
+          needReplace.push(mv);
+        }
+      });
+      if(autoLearn.length>0)addLog(`${fpAfterLearn[0].name}が「${autoLearn.join('」「')}」を覚えた！`);
+      setLp(fpAfterLearn);setPend({learns:needReplace,evo,res:"win",party:fpAfterLearn});
+      if(needReplace.length>0){setLearnNew(needReplace[0]);setPhase("learnReplace");}else if(evo)setPhase("evo");else setPhase("result");
+      return;
+    }
+    setTimeout(()=>{const em=foe.moves[Math.floor(Math.random()*foe.moves.length)]||{name:"かみつく",power:30};
+      if(em.power<0){const healAmt=Math.abs(em.power);const newFoeHp=Math.min(foe.maxHp,foe.hp+healAmt);setFoe(f=>({...f,hp:newFoeHp}));addLog(`${foe.name}の${em.name}！ HPが${healAmt}回復した！`);setPhase("select");return;}
+      const ed=calcDmg(foe.atk,mon.def,em.power);const nmHp=Math.max(0,mon.hp-ed);addLog(`${foe.name}の${em.name}！ ${ed}ダメージ！`);const fp2=updLp.map((c,i)=>i===0?{...c,hp:nmHp}:c);setLp(fp2);if(nmHp<=0){addLog(`${mon.name}は倒れた…`);const hasNext=fp2.slice(1).some(c=>c.hp>0);if(hasNext){setPhase("forceSwap");}else{setPend({learns:[],evo:null,res:"lose",party:fp2});setPhase("result");}}else setPhase("select");},600);
+  };
+
+  const doSwap=idx=>{if(idx===0||lp[idx].hp<=0)return;const nl=[...lp];[nl[0],nl[idx]]=[nl[idx],nl[0]];setLp(nl);addLog(`${nl[0].name}と交代！`);setSwapMode(false);setPhase("select");};
+
+  // 連戦イントロ
+  if(phase==="chainIntro"){
+    return(<div style={{background:"#050305",maxWidth:400,margin:"0 auto",minHeight:"100vh",display:"flex",flexDirection:"column",fontFamily:"serif"}}>
+      <div style={{background:"#0a0508",padding:10,borderBottom:"1px solid #1a0a1a"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
+          <div><div style={{color:"#ccbbaa",fontSize:13}}>{foe.name}</div><div style={{color:"#6a4040",fontSize:10}}>{bossData.chain?.role}</div><div style={{color:"#6a5050",fontSize:10}}>Lv.{foe.level}</div></div>
+          <div style={{textAlign:"right"}}><div style={{color:"#8b6060",fontSize:10,marginBottom:3}}>HP {foe.hp}/{foe.maxHp}</div><HpBar hp={foe.hp} maxHp={foe.maxHp} w={100}/></div>
+        </div>
+        <div style={{display:"flex",justifyContent:"center",height:88,alignItems:"center"}}><CreatureCanvas spr={foe.spr||"daughter"} color={foe.color||"#8b0000"} size={88} scale={3}/></div>
+      </div>
+      <div style={{background:"#080308",padding:"8px 12px",minHeight:60,borderBottom:"1px solid #1a0a1a"}}>
+        {log.slice(-3).map((l,i)=>(<div key={i} style={{color:i===log.slice(-3).length-1?"#ccbbaa":"#5a4a4a",fontSize:11,marginBottom:2,lineHeight:1.5}}>{l}</div>))}
+        <button onClick={()=>setPhase("select")} style={{...BS("#1a0808","#8b0000"),fontSize:11,padding:"3px 10px",marginTop:3}}>▶ 戦う</button>
+      </div>
+    </div>);
+  }
+
+  if(phase==="learnReplace"&&learnNew){
+    const curMon=pend.party?pend.party[0]:lp[0];
+    const advance=()=>{const rest=pend.learns.slice(1);if(rest.length>0){setLearnNew(rest[0]);setPend(p=>({...p,learns:rest}));}else if(pend.evo)setPhase("evo");else setPhase("result");};
+    return(<div style={{background:"#050305",maxWidth:400,margin:"0 auto",minHeight:"100vh",display:"flex",flexDirection:"column",fontFamily:"serif",padding:16}}><div style={{color:"#4a3030",fontSize:11,textAlign:"center",marginBottom:12,letterSpacing:3}}>── 新しい技を覚えた ──</div><div style={{background:"#0a1020",border:"1px solid #2a3060",padding:12,marginBottom:14,textAlign:"center"}}><div style={{color:"#aaaaff",fontSize:16,marginBottom:4}}>「{learnNew.name}」</div><div style={{color:"#6a6a9a",fontSize:10}}>{learnNew.type}タイプ / 威力{learnNew.power} / PP{learnNew.pp}</div></div><div style={{color:"#8b6060",fontSize:11,marginBottom:10}}>どの技と入れ替えますか？（最大4つ）</div>{curMon.moves.map((mv,i)=>(<button key={i} onClick={()=>{const nm=curMon.moves.map((m,j)=>j===i?{...learnNew}:m);const fp=(pend.party||lp).map((c,ci)=>ci===0?{...c,moves:nm}:c);setLp(fp);setPend(p=>({...p,party:fp}));advance();}} style={{...BS("#0d0a0a","#5a3030"),textAlign:"left",marginBottom:7,display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{color:"#ccbbaa",fontSize:12}}>{mv.name}</span><span style={{color:"#6a5050",fontSize:10}}>{mv.type} 威力{mv.power}</span></button>))}<button onClick={advance} style={BS("#0a0808","#3d2020",{width:"100%",marginTop:4,textAlign:"center"})}>覚えない</button></div>);
+  }
+  if(phase==="evo"&&pend.evo){
+    return(<div style={{background:"#050305",maxWidth:400,margin:"0 auto",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"serif",padding:30}}><div style={{color:"#8b0000",fontSize:11,marginBottom:20,letterSpacing:3}}>── 進 化 ──</div><div style={{color:"#8b6060",fontSize:14,marginBottom:8}}>{pend.evo.from}</div><div style={{color:"#ccbbaa",fontSize:11,marginBottom:8}}>▼</div><div style={{color:"#ffcc00",fontSize:22,marginBottom:24}}>{pend.evo.to}</div><button onClick={()=>setPhase("result")} style={BS("#1a0808","#cc3300",{marginTop:8})}>…！</button></div>);
+  }
+  if(phase==="forceSwap"){
+    const forceSwap=idx=>{if(lp[idx].hp<=0)return;const nl=[...lp];[nl[0],nl[idx]]=[nl[idx],nl[0]];setLp(nl);addLog(`${nl[0].name}、行け！`);setPhase("select");};
+    return(<div style={{background:"#050305",maxWidth:400,margin:"0 auto",minHeight:"100vh",display:"flex",flexDirection:"column",fontFamily:"serif",padding:14}}><div style={{color:"#cc4444",fontSize:11,textAlign:"center",marginBottom:6,letterSpacing:2}}>── 次の仲間を選べ ──</div><div style={{color:"#6a4040",fontSize:10,textAlign:"center",marginBottom:14}}>戦える仲間を選んでください</div>{lp.map((c,i)=>{if(i===0)return null;return(<div key={i} onClick={()=>c.hp>0&&forceSwap(i)} style={{background:c.hp<=0?"#080808":"#0a0508",border:`1px solid ${c.hp<=0?"#1a0a0a":"#3d1a2d"}`,padding:12,marginBottom:8,display:"flex",gap:10,alignItems:"center",cursor:c.hp>0?"pointer":"default",opacity:c.hp<=0?0.3:1}}><CreatureCanvas spr={c.spr} color={c.color} size={44}/><div style={{flex:1}}><div style={{display:"flex",justifyContent:"space-between"}}><span style={{color:c.hp<=0?"#5a4040":"#ccbbaa",fontSize:13}}>{c.name}</span><span style={{color:"#6a5050",fontSize:10}}>Lv.{c.level}</span></div><div style={{color:"#6a5050",fontSize:10,margin:"2px 0"}}>{c.types?.join("・")}</div><HpBar hp={c.hp} maxHp={c.maxHp}/><span style={{color:c.hp<=0?"#aa4444":"#6a5050",fontSize:10}}>{c.hp<=0?"戦えない":c.hp+"/"+c.maxHp}</span></div></div>);})}</div>);
+  }
+  if(swapMode){
+    return(<div style={{background:"#050305",maxWidth:400,margin:"0 auto",minHeight:"100vh",display:"flex",flexDirection:"column",fontFamily:"serif",padding:14}}><div style={{color:"#8b6060",fontSize:11,textAlign:"center",marginBottom:12}}>── 誰と交代する？ ──</div>{lp.map((c,i)=>(<div key={i} onClick={()=>i>0&&c.hp>0&&doSwap(i)} style={{background:i===0?"#0d0808":c.hp<=0?"#080808":"#0a0508",border:`1px solid ${i===0?"#5a2020":c.hp<=0?"#1a0a0a":"#2d1a2d"}`,padding:10,marginBottom:8,display:"flex",gap:8,alignItems:"center",cursor:i>0&&c.hp>0?"pointer":"default",opacity:c.hp<=0?0.4:1}}><CreatureCanvas spr={c.spr} color={c.color} size={36}/><div style={{flex:1}}><div style={{display:"flex",justifyContent:"space-between"}}><span style={{color:i===0?"#8b6060":"#ccbbaa",fontSize:12}}>{c.name}{i===0?" ← 戦闘中":""}</span><span style={{color:"#6a5050",fontSize:10}}>Lv.{c.level}</span></div><HpBar hp={c.hp} maxHp={c.maxHp}/><span style={{color:"#6a5050",fontSize:10}}>{c.hp}/{c.maxHp}</span></div></div>))}<button onClick={()=>setSwapMode(false)} style={BS("#0a0508","#3d2020",{width:"100%",marginTop:4})}>キャンセル</button></div>);
+  }
+
+  return(
+    <div style={{background:"#050305",maxWidth:400,margin:"0 auto",minHeight:"100vh",display:"flex",flexDirection:"column",fontFamily:"serif"}}>
+      <div style={{background:"#0a0508",padding:10,borderBottom:"1px solid #1a0a1a"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
+          <div><div style={{color:"#ccbbaa",fontSize:13}}>{foe.name}</div>{isBoss&&<div style={{color:"#6a4040",fontSize:10}}>{bossData.role}</div>}<div style={{color:"#6a5050",fontSize:10}}>Lv.{foe.level} {foe.types?.join("・")}</div></div>
+          <div style={{textAlign:"right"}}><div style={{color:"#8b6060",fontSize:10,marginBottom:3}}>HP {foe.hp}/{foe.maxHp}</div><HpBar hp={foe.hp} maxHp={foe.maxHp} w={100}/></div>
+        </div>
+        <div style={{display:"flex",justifyContent:"center",height:88,alignItems:"center"}}><CreatureCanvas spr={foe.spr||foe.spriteKey} color={foe.color} size={88} scale={foe.spr&&SPRITES[foe.spr]?.w<=12?6:3}/></div>
+      </div>
+      <div style={{background:"#080308",padding:"6px 12px",minHeight:58,borderBottom:"1px solid #1a0a1a"}}>
+        {log.slice(-3).map((l,i)=>(<div key={i} style={{color:i===log.slice(-3).length-1?"#ccbbaa":"#5a4a4a",fontSize:11,marginBottom:2,lineHeight:1.5}}>{l}</div>))}
+        {phase==="intro"&&<button onClick={nextIntro} style={{...BS("#1a0808","#8b0000"),fontSize:11,padding:"3px 10px",marginTop:3}}>▶ 次へ</button>}
+        {phase==="result"&&(<>{pend.res==="win"&&isBoss&&<div style={{color:"#8b6060",fontSize:11,marginTop:3}}>「{bossData.outro[bossData.outro.length-1]}」</div>}<button onClick={()=>onEnd({result:pend.res,party:pend.party||lp})} style={{...BS("#0a0818","#4466cc"),fontSize:11,padding:"4px 12px",marginTop:5}}>{pend.res==="win"?"続ける":"戻る"}</button></>)}
+      </div>
+      {mon&&(<div style={{background:"#080308",padding:"5px 10px",borderBottom:"1px solid #1a0a1a",display:"flex",alignItems:"center",gap:8}}><CreatureCanvas spr={mon.spr} color={mon.color} size={38}/><div style={{flex:1}}><div style={{display:"flex",justifyContent:"space-between"}}><span style={{color:"#ccbbaa",fontSize:12}}>{mon.name}</span><span style={{color:"#6a5a5a",fontSize:10}}>Lv.{mon.level}</span></div><div style={{display:"flex",alignItems:"center",gap:4,marginTop:2}}><HpBar hp={mon.hp} maxHp={mon.maxHp}/><span style={{color:"#6a5a5a",fontSize:10,whiteSpace:"nowrap"}}>{mon.hp}/{mon.maxHp}</span></div><ExpBar exp={mon.exp} lv={mon.level}/></div></div>)}
+      {phase==="select"&&mon&&(
+        <div style={{padding:8,flex:1,display:"flex",flexDirection:"column",gap:6}}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+            {mon.moves.map((mv,i)=>(<button key={i} onClick={()=>doAtk(mv)} style={{...BS("#0d0a0a","#5a3030"),textAlign:"left",padding:"7px 9px",opacity:mv.pp===0?.3:1,pointerEvents:mv.pp===0?"none":"auto"}}><div style={{color:"#ccbbaa",fontSize:11}}>{mv.name}</div><div style={{color:"#6a5050",fontSize:9,marginTop:1}}>{mv.type} 威力{mv.power} <span style={{color:mv.pp<=mv.maxPp*0.3?"#aa4444":"#5a6a5a"}}>PP{mv.pp}/{mv.maxPp}</span></div></button>))}
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginTop:2}}>
+            <button onClick={()=>lp.length>1?setSwapMode(true):addLog("仲間がいない。")} style={BS("#0a0a1a","#4a4a8a",{fontSize:10,padding:"8px 4px",textAlign:"center"})}>交代</button>
+            <button onClick={()=>{
+              // HP満タンはゲット不可
+              if(foe.hp>=foe.maxHp){addLog("元気すぎて相手にされない。");return;}
+              // ボスは撃破後のみゲット可（連戦ボスは除く）
+              if(isBoss&&bossData?.chain){addLog("まだ終わっていない。");return;}
+              const r=(foe.maxHp-foe.hp)/foe.maxHp;
+              if(Math.random()<r*.7+.1){const ct={...foe,hp:foe.maxHp};addLog(`${foe.name}を仲間にした！`);setTimeout(()=>onEnd({result:"caught",party:lp,caught:ct}),700);}
+              else addLog(`${foe.name}には断られた。`);
+            }} style={BS("#0a0d0a","#2a6a2a",{fontSize:10,padding:"8px 4px",textAlign:"center"})}>つかまえる</button>
+            <button onClick={()=>{if(isBoss){addLog("逃げられない…！");return;}onEnd({result:"flee",party:lp});}} style={BS("#0d0a0a","#6a2a2a",{fontSize:10,padding:"8px 4px",textAlign:"center"})}>にげる</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MenuScreen({gs,setGs,onClose}){
+  const [tab,setTab]=useState("party");
+  const [dexTab,setDexTab]=useState("creature");
+  const [msg,setMsg]=useState(null);
+  const [swapping,setSwapping]=useState(false);
+  const [swapFrom,setSwapFrom]=useState(null);
+  const {party=[],inventory=[],memoryItems=[],caught=[],seenChars=[]}=gs;
+
+  const useItm=(it,idx)=>{
+    const res=useItemOn(it,party);
+    setGs(p=>{
+      const ni=[...p.inventory];
+      ni.splice(idx,1);
+      const n={...p,party:res.party,inventory:ni};
+      save(n);return n;
+    });
+    setMsg(res.msg);
+  };
+  const startSwap=i=>{setSwapping(true);setSwapFrom(i);};
+  const doSwap=i=>{if(swapFrom===null||i===swapFrom){setSwapping(false);setSwapFrom(null);return;}setGs(p=>{const np=[...p.party];[np[swapFrom],np[i]]=[np[i],np[swapFrom]];const n={...p,party:np};save(n);return n;});setSwapping(false);setSwapFrom(null);};
+
+  const TABS=[{k:"party",l:"パーティ"},{k:"item",l:"アイテム"},{k:"dex",l:"図鑑"}];
+  const DEX=[{k:"creature",l:"生き物"},{k:"memory",l:"記憶"},{k:"char",l:"人物"}];
+  return(
+    <div style={{position:"fixed",inset:0,background:"#050305",zIndex:300,maxWidth:400,margin:"0 auto",display:"flex",flexDirection:"column",fontFamily:"serif"}}>
+      <div style={{display:"flex",borderBottom:"1px solid #1a0a1a",background:"#0a0508"}}>
+        {TABS.map(({k,l})=>(<button key={k} onClick={()=>setTab(k)} style={{flex:1,background:tab===k?"#1a0808":"none",border:"none",borderBottom:tab===k?"2px solid #8b0000":"none",color:tab===k?"#ccbbaa":"#6a5050",padding:"10px 0",cursor:"pointer",fontSize:12,fontFamily:"serif"}}>{l}</button>))}
+      </div>
+      {msg&&<div style={{background:"#1a0a08",padding:"6px 12px",borderBottom:"1px solid #3a1a1a",display:"flex",justifyContent:"space-between"}}><span style={{color:"#ccbbaa",fontSize:12}}>{msg}</span><button onClick={()=>setMsg(null)} style={{background:"none",border:"none",color:"#8b6060",cursor:"pointer"}}>×</button></div>}
+      {swapping&&tab==="party"&&<div style={{background:"#0a1808",padding:"6px 12px",borderBottom:"1px solid #1a3a1a"}}><span style={{color:"#88aa88",fontSize:11}}>入れ替え先を選んでください</span><button onClick={()=>{setSwapping(false);setSwapFrom(null);}} style={{float:"right",background:"none",border:"none",color:"#8b6060",cursor:"pointer",fontSize:11}}>×</button></div>}
+      <div style={{flex:1,overflow:"auto",padding:10}}>
+        {tab==="party"&&party.map((c,i)=>{
+          const evo=ID2EVO[c.id];const chain=evo?EVO[evo.chain]:null;const next=chain&&evo?chain[evo.idx+1]:null;const isFrom=swapFrom===i;
+          return(<div key={i} style={{background:isFrom?"#1a1a08":"#0a0508",border:`1px solid ${isFrom?"#8b8b00":"#2d1a2d"}`,padding:10,marginBottom:8,display:"flex",gap:8,alignItems:"flex-start"}}><CreatureCanvas spr={c.spr} color={c.color} size={44}/><div style={{flex:1}}><div style={{display:"flex",justifyContent:"space-between"}}><span style={{color:"#ccbbaa",fontSize:13}}>{c.name}</span><span style={{color:"#6a5050",fontSize:10}}>Lv.{c.level}</span></div><div style={{color:"#6a5050",fontSize:10,margin:"1px 0"}}>{c.types?.join("・")}</div><div style={{display:"flex",gap:8,fontSize:10,color:"#5a4a4a",margin:"2px 0"}}><span>HP {c.hp}/{c.maxHp}</span><span>攻{c.atk}</span><span>防{c.def}</span><span>速{c.spd}</span></div><HpBar hp={c.hp} maxHp={c.maxHp}/><ExpBar exp={c.exp} lv={c.level}/><div style={{color:"#334488",fontSize:9,marginTop:1}}>EXP {c.exp||0}/{c.level<MAX_LEVEL?expNeeded(c.level+1):"MAX"}</div>{next&&<div style={{color:"#4a3a2a",fontSize:9,marginTop:2}}>Lv.{evo.evoAt}で「{next.name}」に変化</div>}<div style={{display:"flex",flexWrap:"wrap",gap:3,marginTop:4}}>{(c.moves||[]).map((mv,j)=>(<span key={j} style={{background:"#1a0a18",border:"1px solid #3a1a3a",color:"#aa88aa",fontSize:9,padding:"1px 4px"}}>{mv.name} <span style={{color:mv.pp<=mv.maxPp*0.3?"#aa4444":"#6a6a8a"}}>{mv.pp}/{mv.maxPp}</span></span>))}</div><div style={{marginTop:6}}>{!swapping&&<button onClick={()=>startSwap(i)} style={BS("#0a0a1a","#3a3a6a",{fontSize:10,padding:"4px 10px"})}>入れ替え</button>}{swapping&&swapFrom!==i&&<button onClick={()=>doSwap(i)} style={BS("#0a1a0a","#2a6a2a",{fontSize:10,padding:"4px 10px"})}>ここと交代</button>}</div></div></div>);
+        })}
+        {tab==="item"&&(inventory.length>0?inventory.map((it,i)=>(<div key={i} style={{background:"#0a0508",border:"1px solid #2d1a2d",padding:10,marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}}><div style={{flex:1}}><div style={{color:it.type==="pp"?"#88aaff":"#ffcc00",fontSize:12}}>✦ {it.name}</div><div style={{color:"#8b6060",fontSize:10,marginTop:3,lineHeight:1.5}}>{it.desc?.replace(/ppRestore:\d+/,"")}</div>{it.hp>0&&<div style={{color:"#4a8a4a",fontSize:10,marginTop:2}}>HP +{it.hp}</div>}{it.type==="pp"&&<div style={{color:"#4a6aaa",fontSize:10,marginTop:2}}>PP回復（{it.name.includes("大")?"全回復":"PP+15"}）</div>}</div><button onClick={()=>useItm(it,i)} style={BS("#0a1a0a","#2a6a2a",{fontSize:11,padding:"6px 10px",flexShrink:0})}>使う</button></div>)):<div style={{color:"#4a3030",fontSize:12,textAlign:"center",marginTop:40}}>アイテムはない。</div>)}
+        {tab==="dex"&&(<>
+          <div style={{display:"flex",borderBottom:"1px solid #1a0a1a",marginBottom:10}}>{DEX.map(({k,l})=>(<button key={k} onClick={()=>setDexTab(k)} style={{flex:1,background:dexTab===k?"#0d0508":"none",border:"none",borderBottom:dexTab===k?"1px solid #6a3040":"none",color:dexTab===k?"#ccbbaa":"#5a4050",padding:"7px 0",cursor:"pointer",fontSize:11,fontFamily:"serif"}}>{l}</button>))}</div>
+          {dexTab==="creature"&&(caught.length>0?caught.map((c,i)=>(<div key={i} style={{background:"#0a0508",border:"1px solid #2d1a2d",padding:10,marginBottom:8,display:"flex",gap:8,alignItems:"center"}}><CreatureCanvas spr={c.spr} color={c.color} size={40}/><div><div style={{color:"#ccbbaa",fontSize:13}}>{c.name}</div><div style={{color:"#6a5050",fontSize:10,marginTop:1}}>{c.types?.join("・")} / Lv.{c.level}</div></div></div>)):<div style={{color:"#4a3030",fontSize:12,textAlign:"center",marginTop:40}}>まだ何も捕まえていない。</div>)}
+          {dexTab==="memory"&&(memoryItems.length>0?memoryItems.map((it,i)=>(<div key={i} style={{background:"#0a0810",border:"1px solid #1a1a3d",padding:12,marginBottom:8}}><div style={{color:"#8888cc",fontSize:11,marginBottom:6}}>◈ {it.name}</div><div style={{color:"#9a9aaa",fontSize:11,lineHeight:1.7,fontStyle:"italic"}}>{it.desc}</div></div>)):<div style={{color:"#4a3030",fontSize:12,textAlign:"center",marginTop:40}}>記憶はない。</div>)}
+          {dexTab==="char"&&(seenChars.length>0?seenChars.map((cid,i)=>{const p=CHAR_PROFILES[cid];if(!p)return null;return(<div key={i} style={{background:"#0a0508",border:"1px solid #2d1a2d",padding:12,marginBottom:8,display:"flex",gap:10,alignItems:"flex-start"}}><CreatureCanvas spr={p.spr} color="#5a3a5a" size={48}/><div><div style={{color:"#ccbbaa",fontSize:13}}>{p.name}</div><div style={{color:"#8b6060",fontSize:10,marginTop:1}}>{p.role}</div><div style={{color:"#7a6a7a",fontSize:11,marginTop:6,lineHeight:1.7}}>{p.desc}</div></div></div>);}):<div style={{color:"#4a3030",fontSize:12,textAlign:"center",marginTop:40}}>まだ誰とも会っていない。</div>)}
+        </>)}
+      </div>
+      <div style={{padding:"8px 12px",borderTop:"1px solid #1a0a1a"}}><button onClick={onClose} style={BS("#0a0508","#3d2020",{width:"100%"})}>閉じる</button></div>
+    </div>
+  );
+}
+
+function MsgOverlay({msg,onClose}){
+  if(!msg)return null;
+  return(<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.72)",zIndex:200,display:"flex",alignItems:"flex-end",justifyContent:"center",padding:"0 0 80px"}}><div style={{background:"#0a0505",border:"1px solid #3d2020",padding:16,maxWidth:380,width:"calc(100% - 20px)",fontFamily:"serif"}}>{msg.type==="item"&&(<><div style={{color:msg.item.type==="pp"?"#88aaff":"#ffcc00",fontSize:11,marginBottom:6}}>✦ {msg.item.name}</div><div style={{color:"#ccbbaa",fontSize:12,lineHeight:1.6}}>{msg.item.desc?.replace(/ppRestore:\d+/,"")}</div>{msg.item.type==="heal"&&<div style={{color:"#4a8a4a",fontSize:11,marginTop:6}}>→ アイテム袋に入れた（HP+{msg.item.hp}）</div>}{msg.item.type==="pp"&&<div style={{color:"#4a6aaa",fontSize:11,marginTop:6}}>→ アイテム袋に入れた</div>}{msg.item.type==="memory"&&<div style={{color:"#5a6aaa",fontSize:11,marginTop:6}}>→ 図鑑「記憶」に追加した</div>}</>)}{msg.type==="talk"&&(<><div style={{color:"#8b6060",fontSize:10,marginBottom:4}}>{msg.speaker}</div><div style={{color:"#ccbbaa",fontSize:12,lineHeight:1.7}}>「{msg.text}」</div>{msg.joinMsg&&<div style={{color:"#4a8aaa",fontSize:11,marginTop:10}}>★ {msg.joinMsg}</div>}</>)}{msg.type==="drop"&&(<><div style={{color:"#aaddaa",fontSize:11,marginBottom:6}}>✦ 養命種を拾った</div><div style={{color:"#88cc88",fontSize:12,lineHeight:1.6}}>野生の生き物が落としていった。アイテム袋に入れた。</div></>)}{msg.type==="outro"&&<div style={{color:"#ccbbaa",fontSize:12,lineHeight:1.7}}>「{msg.text}」</div>}<button onClick={()=>{msg.cb&&msg.cb();onClose();}} style={{background:"none",border:"1px solid #3d2020",color:"#8b6060",fontSize:11,padding:"4px 16px",cursor:"pointer",fontFamily:"serif",marginTop:12,width:"100%"}}>続ける ▶</button></div></div>);
+}
+
+function EndingScreen({type}){
+  const isB=type==="B";
+  const lines=isB?[
+    "── 夜の川沿い ──",
+    "暗い。水の音がする。",
+    "隣に誰かがいた。",
+    "「どこへ行くの」",
+    "「わからん。でも帰らない」",
+    "川はずっと流れていた。",
+    "…久保田さんは見つからなかった。",
+    "── END B「逃走」──"
+  ]:[
+    "── 病院のベッド ──",
+    "白い天井。",
+    "家族の声がした。",
+    "顔は分からなかった。",
+    "でも、手だけ握り返した。",
+    "澄子の手だと、分かった気がした。",
+    "久保田さんは翌月、静かに息を引き取った。",
+    "家族全員に看取られた。",
+    "── END A「帰還」──"
+  ];
+  const ref=useRef(null);const t=useRef(0);const [idx,setIdx]=useState(0);
+  useEffect(()=>{const id=setInterval(()=>{t.current++;const c=ref.current;if(!c)return;const ctx=c.getContext("2d");ctx.imageSmoothingEnabled=false;ctx.fillStyle="#020104";ctx.fillRect(0,0,400,200);for(let i=0;i<40;i++){const sx=(i*113+t.current*.2)%380+10,sy=(i*67+t.current*.1)%180+10,b=Math.sin(t.current*.04+i)*.5+.5;ctx.fillStyle=`rgba(${isB?"100,140,200":"180,140,100"},${b*.5})`;ctx.fillRect(sx,sy,1,1);}},60);return()=>clearInterval(id);},[isB]);
+  return(
+    <div style={{background:"#020104",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",fontFamily:"serif"}}>
+      <canvas ref={ref} width={400} height={200} style={{imageRendering:"pixelated",width:"100%",maxWidth:400}}/>
+      <div style={{padding:"20px 30px",maxWidth:400,width:"100%",flex:1,display:"flex",flexDirection:"column",justifyContent:"center"}}>
+        {lines.slice(0,idx+1).map((l,i)=>(
+          <div key={i} style={{color:l.startsWith("──")?(isB?"#7090c0":"#c09060"):i===idx?"#ccbbaa":"#6a5a5a",fontSize:l.startsWith("──")?12:14,letterSpacing:l.startsWith("──")?3:1,textAlign:"center",marginBottom:14,lineHeight:1.8}}>{l}</div>
+        ))}
+        <div style={{marginTop:24,textAlign:"center"}}>
+          {idx<lines.length-1
+            ?<button onClick={()=>setIdx(i=>i+1)} style={BS("#0a0508","#4a3040",{padding:"8px 30px"})}>▶ 次へ</button>
+            :<button onClick={()=>window.location.reload()} style={BS(isB?"#000818":"#180800",isB?"#4466aa":"#aa6600",{padding:"8px 30px"})}>もう一度</button>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App(){
+  const saved=load();
+  const [screen,setScreen]=useState("title");
+  const [gs,setGs]=useState(saved?{...INIT_GS,...saved}:INIT_GS);
+  const [btl,setBtl]=useState(null);
+  const [msgO,setMsgO]=useState(null);
+  const [menu,setMenu]=useState(false);
+  const [ending,setEnding]=useState(null);
+  const btlCb=useRef(null);
+
+  const onBattle=useCallback(({boss,wild,cb})=>{btlCb.current=cb;setBtl(boss?{type:"boss",boss}:{type:"wild",wild});setScreen("battle");},[]);
+  const onMsg=useCallback(m=>{if(m.type==="menu"){setMenu(true);return;}setMsgO(m);},[]);
+
+  // 野生から養命種ドロップ
+  const onDropItem=useCallback((key)=>{
+    const itDef=ITEMS[key];if(!itDef)return;
+    setGs(p=>{const n={...p,inventory:[...(p.inventory||[]),{...itDef,_uid:`drop_${Date.now()}`}]};save(n);return n;});
+    setMsgO({type:"drop",cb:()=>{}});
+  },[]);
+
+  const onBtlEnd=useCallback(({result,party,caught})=>{
+    setScreen("map");
+    setGs(p=>{
+      let n={...p,party:party||p.party};
+      if(result==="win"&&btl?.type==="boss"){
+        const bid=btl.boss.data.id;
+        n.defeatedBosses=[...(n.defeatedBosses||[]),bid];
+        // 連戦ボスの最終IDも登録
+        if(btl.boss.chain)n.defeatedBosses=[...n.defeatedBosses,btl.boss.chain.data.id];
+        if(bid==="masao"){
+          setTimeout(()=>setEnding(n.grannyJoined?"B":"A"),1200);
+        } else {
+          setTimeout(()=>setMsgO({type:"outro",text:btl.boss.outro[btl.boss.outro.length-1],cb:()=>{}}),200);
+        }
+      }
+      if(result==="caught"&&caught){
+        n.caught=[...(n.caught||[]),caught];
+        if(n.party.length<MAX_PARTY)n.party=[...n.party,{...caught,hp:caught.maxHp}];
+        // ボスを仲間にした場合もマップから消す
+        if(btl?.type==="boss"){
+          const bid=btl.boss.data.id;
+          if(!(n.defeatedBosses||[]).includes(bid))n.defeatedBosses=[...(n.defeatedBosses||[]),bid];
+        }
+      }
+      save(n);return n;
+    });
+    setBtl(null);setTimeout(()=>{if(btlCb.current){btlCb.current();btlCb.current=null;}},150);
+  },[btl]);
+
+  // MapScreenからアイテム拾いコールバック（移動含む）
+  const onPickItem=useCallback((itDef,fi)=>{
+    setGs(p=>{
+      const n={...p,pickedItems:[...(p.pickedItems||[]),fi.id]};
+      if(itDef.type==="heal"||itDef.type==="pp")n.inventory=[...(p.inventory||[]),{...itDef,_uid:fi.id}];
+      if(itDef.type==="memory")n.memoryItems=[...(p.memoryItems||[]),{...itDef,_uid:fi.id}];
+      save(n);return n;
+    });
+    setMsgO({type:"item",item:itDef,cb:()=>{}});
+  },[]);
+
+  if(ending)return <EndingScreen type={ending}/>;
+  if(screen==="title")return <TitleScreen hasSave={!!saved} onNew={()=>setScreen("select")} onContinue={()=>{setGs({...INIT_GS,...saved});setScreen("map");}}/>;
+  if(screen==="select")return <SelectScreen onSelect={s=>{const n={...INIT_GS,party:[{...s}]};setGs(n);save(n);setScreen("narration");}}/>;
+  if(screen==="narration")return(<div onClick={()=>setScreen("map")} style={{background:"#020102",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:30,cursor:"pointer"}}><div style={{fontFamily:"serif",textAlign:"center",lineHeight:2.4}}><div style={{color:"#4a3030",fontSize:12,letterSpacing:3,marginBottom:28}}>── 目が覚めた ──</div>{["ここは…どこだ。","暗い。冷たい。","帰らなければ。","…どこへ？"].map((t,i)=>(<div key={i} style={{color:`rgba(180,150,130,${.35+i*.18})`,fontSize:14,marginBottom:10}}>{t}</div>))}<div style={{color:"#2a1a1a",fontSize:11,marginTop:36}}>（タップして始める）</div></div></div>);
+  if(screen==="battle"&&btl){
+    const enemy=btl.type==="boss"?btl.boss.data:btl.wild;
+    return <BattleScreen party={gs.party} grannyJoined={gs.grannyJoined} enemy={enemy} isBoss={btl.type==="boss"} bossData={btl.type==="boss"?btl.boss:null} onEnd={onBtlEnd} onDropItem={onDropItem}/>;
+  }
+  return(<div style={{maxWidth:400,margin:"0 auto",position:"relative"}}><MapScreen gs={gs} setGs={setGs} onBattle={onBattle} onMsg={onMsg}/><MsgOverlay msg={msgO} onClose={()=>setMsgO(null)}/>{menu&&<MenuScreen gs={gs} setGs={setGs} onClose={()=>setMenu(false)}/>}</div>);
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(React.createElement(App));
+</script>
+</body>
+</html>
