@@ -217,14 +217,22 @@ function useItemOn(it,party){
 }
 
 const CHAR_PROFILES={
-  asuka:{name:"久保田 明日香",role:"次女・44歳",spr:"daughter",desc:"父の記憶がほぼない。でも来た。感情的で、泣きながら怒る。それでも毎週来ていた。"},
-  seiichi:{name:"久保田 誠一",role:"長男・48歳",spr:"son",desc:"冷静。義務感で動く。本心は見せない。ただ、靴が泥だらけだった。遠くから来たのだろう。"},
-  granny_npc:{name:"縁側のおばあさん",role:"…",spr:"granny",desc:"名前を聞いたことがない。ずっとあの縁側にいる。「奥さんには内緒」と言った時、少し笑った。"},
-  midori:{name:"ミドリ",role:"チーフナース",spr:"daughter",desc:"本来の使命を持つ。穏やかな顔で、でも目が笑っていない。"},
-  haruka:{name:"ハルカ",role:"受付・元暗殺者",spr:"daughter",desc:"笑顔が怖い。最強技「.45口径　笑」。なぜここにいるのか。"},
-  shouhei:{name:"ショウヘイ",role:"作業療法士",spr:"son",desc:"熱血。2段階で戦う。「あきらめないでください！」と叫びながら殴ってくる。"},
-  tatsuya:{name:"タツヤ",role:"主治医",spr:"son",desc:"誠実だが、真実を隠してきた。"},
-  sumiko:{name:"久保田 澄子",role:"妻・71歳",spr:"granny",desc:"最強。ずっと待っていた。"}
+  asuka:{name:"久保田 明日香",role:"次女・44歳",spr:"daughter",
+    desc:"幼い頃、父がほとんど家にいなかった。仕事か、あるいは別の何かか、今でも分からない。\n父が施設に入ってから、週に一度は必ず来るようになった。父はもう娘の顔を覚えていない。それでも来る。\n「顔を忘れられても、声は覚えてるかもしれないから」と、一度だけ言った。"},
+  seiichi:{name:"久保田 誠一",role:"長男・48歳",spr:"son",
+    desc:"東京で働いている。新幹線で三時間かかる。\n父とはほとんど話したことがない。物心ついた頃から、父は「いるけどいない」人だった。\n靴が泥だらけだった。駅から歩いてきたのだろう。タクシー代を惜しんだのか、それとも時間を稼ぎたかったのか。\n面会の記録に、毎月の日付が几帳面に書いてある。誰も見ていないのに。"},
+  granny_npc:{name:"縁側のおばあさん",role:"…",spr:"granny",
+    desc:"名前を聞いたことがない。ずっとあの縁側にいる。\n正雄がここへ来るずっと前から、あそこにいたらしい。\n「奥さんには内緒」と言った時だけ、少し笑った。\n…何を知っているのだろう。"},
+  midori:{name:"ミドリ",role:"チーフナース・10年目",spr:"daughter",
+    desc:"この病棟に十年いる。認知症の患者を何百人と見てきた。\n穏やかな顔をしているが、目が笑っていない日がある。\n久保田さんのことを「面白い患者」と言った。悪い意味ではないらしい。\n夜勤の終わり、一人で廊下を歩くのが好きだと聞いた。何を考えているのかは分からない。"},
+  haruka:{name:"ハルカ",role:"受付・経歴不明",spr:"daughter",
+    desc:"三ヶ月前から受付にいる。履歴書には空白の期間がある。\n笑顔が完璧すぎる。怒ったところを誰も見たことがない。\n「前のお仕事は？」と聞いた職員が、翌日から別の部署に異動になった。\n院長だけが何かを知っているらしいが、院長は何も言わない。"},
+  shouhei:{name:"ショウヘイ",role:"作業療法士・3年目",spr:"son",
+    desc:"体育会系の見た目に反して、繊細な仕事をする。\n患者が「できた」と感じる瞬間のために、一時間の準備をする。\n久保田さんのリハビリ記録には「頑固。でも確実に進んでいる」と書いてある。\n諦めない、というのは彼の信念ではなく、習慣だ。"},
+  tatsuya:{name:"タツヤ",role:"主治医・神経内科",spr:"son",
+    desc:"久保田正雄の診断書を書いた医師。\n「正直に話す医者」として知られているが、一つだけ言えなかったことがある。\n久保田さんが最初に入院してきた日、病室の窓から空を見て「帰りたい」と言った。その言葉を、カルテには書かなかった。\n家族には、できる限り穏やかに過ごしてもらうことを、と伝えた。"},
+  sumiko:{name:"久保田 澄子",role:"妻・71歳",spr:"granny",
+    desc:"正雄と結婚して四十八年。\n最初の十年は幸せだったと思う。次の十年は忙しかった。その後の二十年は、何があったか覚えていない。\n五年前から、夫が自分の名前を呼ばなくなった。\nそれでも毎日来る。手を握る。正雄は笑う。誰に向けた笑顔かは、分からない。\n…全部、知っている。ずっと知っていた。"}
 };
 
 // ── WORLD定義 ──
@@ -235,10 +243,10 @@ const WORLD=[
    exits:[{x:9,y:13,toArea:1,sx:9,sy:1}],
    boss:{pos:{x:15,y:7},spr:"daughter",name:"久保田 明日香",role:"次女・44歳",
      intro:["お父さん！こんなところで何してるの！","…また、迷子？","一緒に帰ろう。車、停めてあるから。"],
-     outro:["…強い。昔から、頑固だった。","……勝手にして。"],
-     data:{id:"asuka",name:"久保田 明日香",types:["オス","メス"],maxHp:120,hp:120,atk:55,def:40,spd:60,level:20,moves:[{name:"家族の義務",power:40,type:"オス",pp:20,maxPp:20},{name:"感情の爆発",power:60,type:"メス",pp:10,maxPp:10},{name:"遠い記憶",power:30,type:"つめたい",pp:30,maxPp:30},{name:"父親への怒り",power:75,type:"メス",pp:5,maxPp:5}]}},
+     outro:["…強い。昔から、頑固だった。","…ここ、病院の敷地なの。知ってた？","お父さん、三年前からここにいる。","毎週来てたよ。顔、覚えてないでしょ。","……勝手にして。でも死なないでよ。"],
+     data:{id:"asuka",name:"久保田 明日香",spr:"daughter",color:"#e74c3c",types:["オス","メス"],maxHp:120,hp:120,atk:55,def:40,spd:60,level:20,moves:[{name:"家族の義務",power:40,type:"オス",pp:20,maxPp:20},{name:"感情の爆発",power:60,type:"メス",pp:10,maxPp:10},{name:"遠い記憶",power:30,type:"つめたい",pp:30,maxPp:30},{name:"父親への怒り",power:75,type:"メス",pp:5,maxPp:5}]}},
    npcs:[{id:"granny",pos:{x:4,y:12},spr:"granny",talks:["…あら。","…久しぶりだね。","ここ、覚えてる？","昔もよく来てたね。","あんたは変わらないね。","奥さんには、内緒にしてたね。","…わかってた？","何年、経ったかな。","あんたの声、好きだったよ。","もう会えないと思ってた。","…嬉しいよ。","怖くないの？","ここから逃げようとしてるの？","どこへ行くつもり？","あんたのこと、ずっと待ってたよ。","奥さんは知らなかったと思う。","…でも、気づいてたかもね。","あんたが来るたびに、嬉しかった。","もう昔には戻れないね。","それでも、ここにいたよ。","あんたの子供たち、大きくなったね。","わたしには、子供いないから。","それで良かったと思ってる。","…本当に？","わからなくなってきた。","あんたは、わかってる？","どこへ行けばいい？","一緒に行こうか。","怖くないよ。","…一緒に行くよ。"]}],
-   items:[{id:"fi0",key:"photo0",pos:{x:6,y:8}},{id:"fi1",key:"receipt0",pos:{x:12,y:8}},{id:"fi2",key:"ointment",pos:{x:3,y:5}},{id:"fi3",key:"cold_tea",pos:{x:16,y:5}},{id:"fi_m1",key:"mystery1",pos:{x:8,y:3}},{id:"fi_h1",key:"heisei_eraser",pos:{x:15,y:11}},{id:"fi_h2",key:"school_note",pos:{x:4,y:11}}]},
+   items:[{id:"fi0",key:"photo0",pos:{x:6,y:6}},{id:"fi1",key:"receipt0",pos:{x:13,y:6}},{id:"fi2",key:"ointment",pos:{x:4,y:7}},{id:"fi3",key:"cold_tea",pos:{x:15,y:7}},{id:"fi_m1",key:"mystery1",pos:{x:9,y:7}},{id:"fi_h1",key:"heisei_eraser",pos:{x:7,y:11}},{id:"fi_h2",key:"school_note",pos:{x:11,y:11}}]},
 
   // エリア1
   {name:"廃墟周辺の道",bg:"#080a08",spawn:{x:9,y:1},
@@ -246,10 +254,10 @@ const WORLD=[
    exits:[{x:9,y:1,toArea:0,sx:9,sy:12},{x:9,y:13,toArea:2,sx:9,sy:1}],
    boss:{pos:{x:10,y:5},spr:"son",name:"久保田 誠一",role:"長男・48歳",
      intro:["父さん。","…どこへ行くつもりですか。","手続きがあるので、もう少し待ってください。"],
-     outro:["…わかりました。","あまり遠くへは行かないでください。","…お願いします。"],
-     data:{id:"seiichi",name:"久保田 誠一",types:["かたい","でかい"],maxHp:150,hp:150,atk:65,def:60,spd:40,level:25,moves:[{name:"長男の責任",power:50,type:"かたい",pp:20,maxPp:20},{name:"冷静な判断",power:45,type:"でかい",pp:15,maxPp:15},{name:"沈黙の圧力",power:55,type:"つめたい",pp:10,maxPp:10},{name:"本音の封鎖",power:80,type:"かたい",pp:5,maxPp:5}]}},
+     outro:["…わかりました。","父さん、母さんは毎日来てます。","知ってましたか。","俺は…月に一回しか来られなくて。","…それだけです。行ってください。"],
+     data:{id:"seiichi",name:"久保田 誠一",spr:"son",color:"#2980b9",types:["かたい","でかい"],maxHp:150,hp:150,atk:65,def:60,spd:40,level:25,moves:[{name:"長男の責任",power:50,type:"かたい",pp:20,maxPp:20},{name:"冷静な判断",power:45,type:"でかい",pp:15,maxPp:15},{name:"沈黙の圧力",power:55,type:"つめたい",pp:10,maxPp:10},{name:"本音の封鎖",power:80,type:"かたい",pp:5,maxPp:5}]}},
    npcs:[],
-   items:[{id:"fi5",key:"candy1",pos:{x:5,y:7}},{id:"fi6",key:"card1",pos:{x:14,y:7}},{id:"fi7",key:"half_meds",pos:{x:16,y:5}},{id:"fi8",key:"glasses",pos:{x:3,y:10}},{id:"fi_m2",key:"mystery2",pos:{x:9,y:3}},{id:"fi_h3",key:"heisei_sticker",pos:{x:6,y:11}},{id:"fi_h4",key:"radio_cassette",pos:{x:13,y:11}},{id:"fi_h5",key:"old_key",pos:{x:3,y:5}}]},
+   items:[{id:"fi5",key:"candy1",pos:{x:4,y:7}},{id:"fi6",key:"card1",pos:{x:15,y:7}},{id:"fi7",key:"half_meds",pos:{x:9,y:6}},{id:"fi8",key:"glasses",pos:{x:9,y:11}},{id:"fi_m2",key:"mystery2",pos:{x:6,y:8}},{id:"fi_h3",key:"heisei_sticker",pos:{x:13,y:8}},{id:"fi_h4",key:"radio_cassette",pos:{x:4,y:11}},{id:"fi_h5",key:"old_key",pos:{x:15,y:11}}]},
 
   // エリア2: 病院の庭（ミドリ→ハルカ連戦）
   {name:"病院の庭",bg:"#080c0a",spawn:{x:9,y:1},
@@ -258,13 +266,13 @@ const WORLD=[
    boss:{pos:{x:9,y:6},spr:"daughter",name:"ミドリ",role:"チーフナース",
      intro:["久保田さん、少しよろしいですか。","病室に戻りましょう。心配しています。","…言うことを聞いてくれないなら、実力行使です。"],
      outro:["…さすがですね。","ハルカ、お願いします。"],
-     data:{id:"midori",name:"ミドリ",types:["オス","つめたい"],maxHp:160,hp:160,atk:68,def:55,spd:58,level:28,moves:[{name:"業務的優しさ",power:45,type:"オス",pp:20,maxPp:20},{name:"投薬",power:55,type:"つめたい",pp:15,maxPp:15},{name:"看護の心（回復）",power:-40,type:"オス",pp:10,maxPp:10},{name:"本来の使命",power:85,type:"オス",pp:5,maxPp:5}]},
+     data:{id:"midori",name:"ミドリ",spr:"daughter",color:"#27ae60",types:["オス","つめたい"],maxHp:160,hp:160,atk:68,def:55,spd:58,level:28,moves:[{name:"業務的優しさ",power:45,type:"オス",pp:20,maxPp:20},{name:"投薬",power:55,type:"つめたい",pp:15,maxPp:15},{name:"看護の心（回復）",power:-40,type:"オス",pp:10,maxPp:10},{name:"本来の使命",power:85,type:"オス",pp:5,maxPp:5}]},
      chain:{id:"haruka",name:"ハルカ",role:"受付・元暗殺者",
        intro:["笑顔でお願いします☆",".45口径　笑。"],
-       outro:["…まさか。","行ってください。"],
-       data:{id:"haruka",name:"ハルカ",types:["メス","しらん"],maxHp:190,hp:190,atk:90,def:50,spd:90,level:30,moves:[{name:"受付の笑顔",power:50,type:"メス",pp:20,maxPp:20},{name:"素早い手",power:70,type:"しらん",pp:12,maxPp:12},{name:"元の仕事",power:90,type:"メス",pp:8,maxPp:8},{name:".45口径　笑",power:115,type:"メス",pp:3,maxPp:3}]}}},
+       outro:["…まさか。","前の職場でも、負けたことなかったのに。","…久保田さん、ミドリさんのこと、好きでしょ。","あの人、毎晩あなたの部屋の前に立ってたんですよ。","行ってください。笑顔で。"],
+       data:{id:"haruka",name:"ハルカ",spr:"daughter",color:"#fd79a8",types:["メス","しらん"],maxHp:190,hp:190,atk:90,def:50,spd:90,level:30,moves:[{name:"受付の笑顔",power:50,type:"メス",pp:20,maxPp:20},{name:"素早い手",power:70,type:"しらん",pp:12,maxPp:12},{name:"元の仕事",power:90,type:"メス",pp:8,maxPp:8},{name:".45口径　笑",power:115,type:"メス",pp:3,maxPp:3}]}}},
    npcs:[],
-   items:[{id:"fi9",key:"nameplate",pos:{x:5,y:3}},{id:"fi10",key:"letter_draft",pos:{x:14,y:3}},{id:"fi11",key:"cane",pos:{x:3,y:6}},{id:"fi12",key:"half_meds",pos:{x:16,y:10}},{id:"fi_m3",key:"mystery3",pos:{x:9,y:9}},{id:"fi_h6",key:"heisei_game",pos:{x:15,y:6}},{id:"fi_h7",key:"notebook",pos:{x:4,y:9}}]},
+   items:[{id:"fi9",key:"nameplate",pos:{x:5,y:8}},{id:"fi10",key:"letter_draft",pos:{x:14,y:8}},{id:"fi11",key:"cane",pos:{x:9,y:5}},{id:"fi12",key:"half_meds",pos:{x:9,y:11}},{id:"fi_m3",key:"mystery3",pos:{x:4,y:7}},{id:"fi_h6",key:"heisei_game",pos:{x:15,y:7}},{id:"fi_h7",key:"notebook",pos:{x:9,y:7}}]},
 
   // エリア3: 病院内部（ショウヘイ2段階）
   {name:"病院内部",bg:"#08080c",spawn:{x:9,y:1},
@@ -273,13 +281,13 @@ const WORLD=[
    boss:{pos:{x:15,y:6},spr:"son",name:"ショウヘイ",role:"作業療法士",
      intro:["あきらめないでください！","体を動かすことが、生きることです！","行きます！"],
      outro:["くっ…まだです！","第2形態！"],
-     data:{id:"shouhei",name:"ショウヘイ",types:["メス","かたい"],maxHp:180,hp:180,atk:75,def:70,spd:55,level:33,moves:[{name:"リハビリ",power:50,type:"メス",pp:20,maxPp:20},{name:"熱血指導",power:65,type:"かたい",pp:15,maxPp:15},{name:"限界突破",power:80,type:"メス",pp:10,maxPp:10},{name:"諦めない心",power:95,type:"かたい",pp:5,maxPp:5}]},
+     data:{id:"shouhei",name:"ショウヘイ",spr:"son",color:"#e67e22",types:["メス","かたい"],maxHp:180,hp:180,atk:75,def:70,spd:55,level:33,moves:[{name:"リハビリ",power:50,type:"メス",pp:20,maxPp:20},{name:"熱血指導",power:65,type:"かたい",pp:15,maxPp:15},{name:"限界突破",power:80,type:"メス",pp:10,maxPp:10},{name:"諦めない心",power:95,type:"かたい",pp:5,maxPp:5}]},
      chain:{id:"shouhei2",name:"ショウヘイ（本気）",role:"作業療法士・開眼",
        intro:["まだ終わらせません！","行きます、本気で！"],
-       outro:["…すごい。","本当に、諦めない人だ。","行ってください。"],
-       data:{id:"shouhei2",name:"ショウヘイ（本気）",types:["メス","オス"],maxHp:220,hp:220,atk:95,def:75,spd:70,level:35,moves:[{name:"魂のリハビリ",power:70,type:"メス",pp:15,maxPp:15},{name:"熱血覚醒",power:85,type:"オス",pp:10,maxPp:10},{name:"魂の叫び",power:100,type:"メス",pp:7,maxPp:7},{name:"諦めない魂",power:120,type:"オス",pp:4,maxPp:4}]}}},
+       outro:["…すごい。","本当に、諦めない人だ。","リハビリ記録、見ましたよ。","最初の頃、名前が書けなかったでしょ。","久保田正雄って、何百回も練習してた。","…行ってください。"],
+       data:{id:"shouhei2",name:"ショウヘイ（本気）",spr:"son",color:"#d35400",types:["メス","オス"],maxHp:220,hp:220,atk:95,def:75,spd:70,level:35,moves:[{name:"魂のリハビリ",power:70,type:"メス",pp:15,maxPp:15},{name:"熱血覚醒",power:85,type:"オス",pp:10,maxPp:10},{name:"魂の叫び",power:100,type:"メス",pp:7,maxPp:7},{name:"諦めない魂",power:120,type:"オス",pp:4,maxPp:4}]}}},
    npcs:[],
-   items:[{id:"fi13",key:"wedding_photo",pos:{x:6,y:6}},{id:"fi14",key:"rehab_record",pos:{x:13,y:6}},{id:"fi15",key:"ointment",pos:{x:3,y:9}},{id:"fi_m4",key:"mystery4",pos:{x:16,y:3}},{id:"fi_m5",key:"mystery5",pos:{x:3,y:3}},{id:"fi_h8",key:"tv_guide",pos:{x:9,y:3}},{id:"fi_h9",key:"stabilizer",pos:{x:16,y:9}}]},
+   items:[{id:"fi13",key:"wedding_photo",pos:{x:5,y:8}},{id:"fi14",key:"rehab_record",pos:{x:14,y:8}},{id:"fi15",key:"ointment",pos:{x:9,y:12}},{id:"fi_m4",key:"mystery4",pos:{x:6,y:6}},{id:"fi_m5",key:"mystery5",pos:{x:13,y:6}},{id:"fi_h8",key:"tv_guide",pos:{x:9,y:3}},{id:"fi_h9",key:"stabilizer",pos:{x:9,y:11}}]},
 
   // エリア4: 病院の奥（タツヤ→澄子連戦）
   {name:"病院の奥",bg:"#0a080c",spawn:{x:9,y:1},
@@ -287,17 +295,17 @@ const WORLD=[
    exits:[{x:9,y:1,toArea:3,sx:9,sy:12},{x:9,y:13,toArea:5,sx:9,sy:1}],
    boss:{pos:{x:10,y:8},spr:"son",name:"タツヤ",role:"主治医",
      intro:["久保田さん。","…ずっと伝えられなかったことがあります。","でも今は、向き合わなければ。"],
-     outro:["…やはり。","隠してきたことを、許してください。","澄子さんが待っています。"],
-     data:{id:"tatsuya",name:"タツヤ（主治医）",types:["かたい","つめたい"],maxHp:200,hp:200,atk:78,def:72,spd:50,level:38,moves:[{name:"病状説明",power:55,type:"かたい",pp:18,maxPp:18},{name:"隠された事実",power:70,type:"つめたい",pp:12,maxPp:12},{name:"医師の責任",power:85,type:"かたい",pp:8,maxPp:8},{name:"真実の告白",power:105,type:"オス",pp:4,maxPp:4}]},
+     outro:["…やはり。","隠してきたことを、許してください。","あなたが最初に入院した日。","「帰りたい」と言いましたね。","どこへ、とは聞きませんでした。","カルテにも書きませんでした。","…澄子さんが待っています。"],
+     data:{id:"tatsuya",name:"タツヤ（主治医）",spr:"son",color:"#8e44ad",types:["かたい","つめたい"],maxHp:200,hp:200,atk:78,def:72,spd:50,level:38,moves:[{name:"病状説明",power:55,type:"かたい",pp:18,maxPp:18},{name:"隠された事実",power:70,type:"つめたい",pp:12,maxPp:12},{name:"医師の責任",power:85,type:"かたい",pp:8,maxPp:8},{name:"真実の告白",power:105,type:"オス",pp:4,maxPp:4}]},
      chain:{id:"sumiko",name:"久保田 澄子",role:"妻・71歳",
        intro:["あなた。","…やっと会えた。","ずっと待っていたよ。"],
-       introAngry:["あなた…","…その人、誰。","…知ってた。知ってたよ。ずっと。","許さない。"],
-       outro:["…もう少しだけ、ここにいて。","でも、行くなら行きなさい。","わかってるから。"],
-       outroAngry:["…行きなさい。","でも、あの人とは行かないで。","それだけ。"],
-       data:{id:"sumiko",name:"久保田 澄子",types:["オス","かたい"],maxHp:260,hp:260,atk:88,def:90,spd:55,level:42,moves:[{name:"71年の愛",power:65,type:"オス",pp:20,maxPp:20},{name:"ずっと待ってた",power:80,type:"オス",pp:15,maxPp:15},{name:"わかってるから",power:95,type:"かたい",pp:10,maxPp:10},{name:"最強の妻",power:120,type:"オス",pp:4,maxPp:4}]},
-       dataAngry:{id:"sumiko_angry",name:"久保田 澄子（激怒）",types:["オス","かたい"],maxHp:320,hp:320,atk:115,def:90,spd:70,level:45,moves:[{name:"知ってたんだよ",power:80,type:"オス",pp:18,maxPp:18},{name:"71年分の怒り",power:100,type:"かたい",pp:12,maxPp:12},{name:"許さない",power:120,type:"オス",pp:8,maxPp:8},{name:"最強の妻（本気）",power:150,type:"かたい",pp:3,maxPp:3}]}}},
+       introAngry:["あなた…","…その人、誰。","…いいの。言わなくて。","知ってたから。","ずっと、知ってたから。","四十年前から。","縁側のおばあさんでしょ。","名前くらい、知ってるよ。","あなたが行くたびに、顔が違ったから。","毎週来てたのに、私には気づかなかった。","でもね、あなたのこと嫌いじゃなかった。","ずっと好きだったよ。","だから余計に、許せない。","…連れて来たの。","この私の前に。","許さない。"],
+       outro:["…もう少しだけ、ここにいて。","でも、行くなら行きなさい。","わかってるから。","…四十八年、一緒にいたんだもの。","あなたのことくらい、わかる。"],
+       outroAngry:["…行きなさい。","あの人とは、行かないで。","それだけ。","…それだけだから。"],
+       data:{id:"sumiko",name:"久保田 澄子",spr:"granny",color:"#9b59b6",types:["オス","かたい"],maxHp:260,hp:260,atk:88,def:90,spd:55,level:42,moves:[{name:"71年の愛",power:65,type:"オス",pp:20,maxPp:20},{name:"ずっと待ってた",power:80,type:"オス",pp:15,maxPp:15},{name:"わかってるから",power:95,type:"かたい",pp:10,maxPp:10},{name:"最強の妻",power:120,type:"オス",pp:4,maxPp:4}]},
+       dataAngry:{id:"sumiko_angry",name:"久保田 澄子（激怒）",spr:"granny",color:"#c0392b",types:["オス","かたい"],maxHp:320,hp:320,atk:115,def:90,spd:70,level:45,moves:[{name:"知ってたんだよ",power:80,type:"オス",pp:18,maxPp:18},{name:"71年分の怒り",power:100,type:"かたい",pp:12,maxPp:12},{name:"許さない",power:120,type:"オス",pp:8,maxPp:8},{name:"最強の妻（本気）",power:150,type:"かたい",pp:3,maxPp:3}]}}},
    npcs:[],
-   items:[{id:"fi16",key:"ring",pos:{x:5,y:4}},{id:"fi17",key:"family_photo",pos:{x:14,y:4}},{id:"fi18",key:"cold_tea",pos:{x:9,y:8}},{id:"fi_m6",key:"mystery6",pos:{x:3,y:8}},{id:"fi_m7",key:"mystery7",pos:{x:16,y:8}},{id:"fi_ha",key:"coin",pos:{x:9,y:5}}]},
+   items:[{id:"fi16",key:"ring",pos:{x:6,y:4}},{id:"fi17",key:"family_photo",pos:{x:13,y:4}},{id:"fi18",key:"cold_tea",pos:{x:9,y:9}},{id:"fi_m6",key:"mystery6",pos:{x:5,y:8}},{id:"fi_m7",key:"mystery7",pos:{x:13,y:8}},{id:"fi_ha",key:"coin",pos:{x:9,y:11}}]},
 
   // エリア5: 内なる場所（久保田 正雄・最終ボス）
   {name:"内なる場所",bg:"#060608",spawn:{x:9,y:1},
@@ -306,7 +314,7 @@ const WORLD=[
    boss:{pos:{x:10,y:7},spr:"grandpa",name:"久保田 正雄",role:"内なる自分",
      intro:["…誰だ。","…俺か。","帰るのか。それとも、まだここにいるのか。"],
      outro:["…そうか。","好きにしろ。","ただ…","…覚えていてくれ。"],
-     data:{id:"masao",name:"久保田 正雄",types:["オス","かたい"],maxHp:300,hp:300,atk:90,def:90,spd:65,level:50,moves:[{name:"忘れかけた名前",power:70,type:"オス",pp:18,maxPp:18},{name:"若い頃の俺",power:85,type:"かたい",pp:12,maxPp:12},{name:"消えていく記憶",power:100,type:"オス",pp:8,maxPp:8},{name:"正雄の意地",power:130,type:"かたい",pp:4,maxPp:4}]}},
+     data:{id:"masao",name:"久保田 正雄",spr:"grandpa",color:"#7f8c8d",types:["オス","かたい"],maxHp:300,hp:300,atk:90,def:90,spd:65,level:50,moves:[{name:"忘れかけた名前",power:70,type:"オス",pp:18,maxPp:18},{name:"若い頃の俺",power:85,type:"かたい",pp:12,maxPp:12},{name:"消えていく記憶",power:100,type:"オス",pp:8,maxPp:8},{name:"正雄の意地",power:130,type:"かたい",pp:4,maxPp:4}]}},
    npcs:[],
    items:[{id:"fi19",key:"mirror",pos:{x:5,y:8}},{id:"fi20",key:"yomei_full",pos:{x:14,y:8}},{id:"fi_hb",key:"notebook",pos:{x:9,y:6}}]}
 ];
@@ -517,7 +525,7 @@ function BattleScreen({party,grannyJoined,enemy,isBoss,bossData,onEnd,onDropItem
       const expG=foe.level*60;let learnQ=[],evo=null;
       const fp=updLp.map((c,i)=>{if(i!==0)return c;const r=gainExp(c,expG);r.newMovesToLearn.forEach(m=>{if(!r.creature.moves.find(x=>x.name===m.name))learnQ.push(m);});if(r.evolutions.length>0)evo=r.evolutions[r.evolutions.length-1];addLog(`${r.creature.name}にEXP+${expG}！`);if(r.levelUps.length>0)addLog(`Lv.${r.levelUps[r.levelUps.length-1]}！★PP全回復`);return r.creature;});
       // 野生から養命種ドロップ
-      if(!isBoss&&Math.random()<0.08)setTimeout(()=>onDropItem&&onDropItem("yomei"),400);
+      if(!isBoss){if(Math.random()<0.08)setTimeout(()=>onDropItem&&onDropItem("yomei"),400);else if(Math.random()<0.12)setTimeout(()=>onDropItem&&onDropItem("half_meds"),400);}
       setLp(fp);setPend({learns:learnQ,evo,res:"win",party:fp});
       // 技が4未満なら自動追加、4つなら入れ替え選択
       let fpAfterLearn=fp;
@@ -545,18 +553,31 @@ function BattleScreen({party,grannyJoined,enemy,isBoss,bossData,onEnd,onDropItem
   const doSwap=idx=>{if(idx===0||lp[idx].hp<=0)return;const nl=[...lp];[nl[0],nl[idx]]=[nl[idx],nl[0]];setLp(nl);addLog(`${nl[0].name}と交代！`);setSwapMode(false);setPhase("select");};
 
   // 連戦イントロ
+  const [chainIdx,setChainIdx]=useState(0);
   if(phase==="chainIntro"){
-    return(<div style={{background:"#050305",maxWidth:400,margin:"0 auto",minHeight:"100vh",display:"flex",flexDirection:"column",fontFamily:"serif"}}>
-      <div style={{background:"#0a0508",padding:10,borderBottom:"1px solid #1a0a1a"}}>
+    const chainIntroLines=bossData?.chain?.intro||[];
+    const isAngry=grannyJoined&&bossData?.chain?.id==="sumiko";
+    const lines=isAngry?(bossData?.chain?.introAngry||chainIntroLines):chainIntroLines;
+    const currentLine=lines[chainIdx]||"";
+    const isLast=chainIdx>=lines.length-1;
+    const bgColor=isAngry?"#080004":"#050305";
+    const borderColor=isAngry?"#5a0020":"#1a0a1a";
+    return(<div style={{background:bgColor,maxWidth:400,margin:"0 auto",minHeight:"100vh",display:"flex",flexDirection:"column",fontFamily:"serif"}}>
+      {isAngry&&<div style={{background:"#3a0010",padding:"6px 12px",textAlign:"center",borderBottom:`1px solid ${borderColor}`}}><span style={{color:"#ff6080",fontSize:11,letterSpacing:2}}>── 激怒 ──</span></div>}
+      <div style={{background:"#0a0508",padding:10,borderBottom:`1px solid ${borderColor}`}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
-          <div><div style={{color:"#ccbbaa",fontSize:13}}>{foe.name}</div><div style={{color:"#6a4040",fontSize:10}}>{bossData.chain?.role}</div><div style={{color:"#6a5050",fontSize:10}}>Lv.{foe.level}</div></div>
+          <div><div style={{color:isAngry?"#ffaaaa":"#ccbbaa",fontSize:13}}>{foe.name}</div><div style={{color:"#6a4040",fontSize:10}}>{bossData.chain?.role}</div><div style={{color:"#6a5050",fontSize:10}}>Lv.{foe.level}</div></div>
           <div style={{textAlign:"right"}}><div style={{color:"#8b6060",fontSize:10,marginBottom:3}}>HP {foe.hp}/{foe.maxHp}</div><HpBar hp={foe.hp} maxHp={foe.maxHp} w={100}/></div>
         </div>
-        <div style={{display:"flex",justifyContent:"center",height:88,alignItems:"center"}}><CreatureCanvas spr={foe.spr||"daughter"} color={foe.color||"#8b0000"} size={88} scale={3}/></div>
+        <div style={{display:"flex",justifyContent:"center",height:88,alignItems:"center"}}><CreatureCanvas spr={foe.spr||"granny"} color={foe.color||"#8b0000"} size={88} scale={3}/></div>
       </div>
-      <div style={{background:"#080308",padding:"8px 12px",minHeight:60,borderBottom:"1px solid #1a0a1a"}}>
-        {log.slice(-3).map((l,i)=>(<div key={i} style={{color:i===log.slice(-3).length-1?"#ccbbaa":"#5a4a4a",fontSize:11,marginBottom:2,lineHeight:1.5}}>{l}</div>))}
-        <button onClick={()=>setPhase("select")} style={{...BS("#1a0808","#8b0000"),fontSize:11,padding:"3px 10px",marginTop:3}}>▶ 戦う</button>
+      <div style={{background:isAngry?"#100008":"#080308",padding:"12px 16px",flex:1,display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
+        <div>
+          {lines.slice(0,chainIdx+1).map((l,i)=>(<div key={i} style={{color:i===chainIdx?(isAngry?"#ffcccc":"#ccbbaa"):"#4a3a4a",fontSize:i===chainIdx?13:10,marginBottom:6,lineHeight:1.7,fontStyle:i===chainIdx?"normal":"italic"}}>「{l}」</div>))}
+        </div>
+        <button onClick={()=>{if(isLast){setPhase("select");}else{setChainIdx(ci=>ci+1);}}} style={{...BS(isAngry?"#3a0010":"#1a0808",isAngry?"#cc0030":"#8b0000"),fontSize:12,padding:"8px 16px",marginTop:12}}>
+          {isLast?"▶ 戦う":"▶ 次へ"}
+        </button>
       </div>
     </div>);
   }
@@ -589,7 +610,7 @@ function BattleScreen({party,grannyJoined,enemy,isBoss,bossData,onEnd,onDropItem
       <div style={{background:"#080308",padding:"6px 12px",minHeight:58,borderBottom:"1px solid #1a0a1a"}}>
         {log.slice(-3).map((l,i)=>(<div key={i} style={{color:i===log.slice(-3).length-1?"#ccbbaa":"#5a4a4a",fontSize:11,marginBottom:2,lineHeight:1.5}}>{l}</div>))}
         {phase==="intro"&&<button onClick={nextIntro} style={{...BS("#1a0808","#8b0000"),fontSize:11,padding:"3px 10px",marginTop:3}}>▶ 次へ</button>}
-        {phase==="result"&&(<>{pend.res==="win"&&isBoss&&<div style={{color:"#8b6060",fontSize:11,marginTop:3}}>「{bossData.outro[bossData.outro.length-1]}」</div>}<button onClick={()=>onEnd({result:pend.res,party:pend.party||lp})} style={{...BS("#0a0818","#4466cc"),fontSize:11,padding:"4px 12px",marginTop:5}}>{pend.res==="win"?"続ける":"戻る"}</button></>)}
+        {phase==="result"&&(<OutroResult pend={pend} isBoss={isBoss} bossData={bossData} onEnd={()=>onEnd({result:pend.res,party:pend.party||lp})}/>)}
       </div>
       {mon&&(<div style={{background:"#080308",padding:"5px 10px",borderBottom:"1px solid #1a0a1a",display:"flex",alignItems:"center",gap:8}}><CreatureCanvas spr={mon.spr} color={mon.color} size={38}/><div style={{flex:1}}><div style={{display:"flex",justifyContent:"space-between"}}><span style={{color:"#ccbbaa",fontSize:12}}>{mon.name}</span><span style={{color:"#6a5a5a",fontSize:10}}>Lv.{mon.level}</span></div><div style={{display:"flex",alignItems:"center",gap:4,marginTop:2}}><HpBar hp={mon.hp} maxHp={mon.maxHp}/><span style={{color:"#6a5a5a",fontSize:10,whiteSpace:"nowrap"}}>{mon.hp}/{mon.maxHp}</span></div><ExpBar exp={mon.exp} lv={mon.level}/></div></div>)}
       {phase==="select"&&mon&&(
@@ -600,10 +621,9 @@ function BattleScreen({party,grannyJoined,enemy,isBoss,bossData,onEnd,onDropItem
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginTop:2}}>
             <button onClick={()=>lp.length>1?setSwapMode(true):addLog("仲間がいない。")} style={BS("#0a0a1a","#4a4a8a",{fontSize:10,padding:"8px 4px",textAlign:"center"})}>交代</button>
             <button onClick={()=>{
-              // HP満タンはゲット不可
               if(foe.hp>=foe.maxHp){addLog("元気すぎて相手にされない。");return;}
-              // ボスは撃破後のみゲット可（連戦ボスは除く）
-              if(isBoss&&bossData?.chain){addLog("まだ終わっていない。");return;}
+              // chainBossがまだ残っている間はゲット不可（すでにchainBossはnullなら連戦済み）
+              if(isBoss&&chainBoss!==null&&chainBoss!==undefined){addLog("まだ終わっていない。");return;}
               const r=(foe.maxHp-foe.hp)/foe.maxHp;
               if(Math.random()<r*.7+.1){const ct={...foe,hp:foe.maxHp};addLog(`${foe.name}を仲間にした！`);setTimeout(()=>onEnd({result:"caught",party:lp,caught:ct}),700);}
               else addLog(`${foe.name}には断られた。`);
@@ -614,6 +634,17 @@ function BattleScreen({party,grannyJoined,enemy,isBoss,bossData,onEnd,onDropItem
       )}
     </div>
   );
+}
+
+function OutroResult({pend,isBoss,bossData,onEnd}){
+  const lines=isBoss&&pend.res==="win"?(bossData.outro||[]):[];
+  const [idx,setIdx]=useState(0);
+  const isLast=idx>=lines.length-1;
+  if(lines.length===0)return(<button onClick={onEnd} style={{...BS("#0a0818","#4466cc"),fontSize:11,padding:"4px 12px",marginTop:5}}>{pend.res==="win"?"続ける":"戻る"}</button>);
+  return(<div>
+    <div style={{color:"#ccbbaa",fontSize:11,marginTop:4,lineHeight:1.7}}>「{lines[idx]}」</div>
+    <button onClick={()=>{if(isLast)onEnd();else setIdx(i=>i+1);}} style={{...BS("#0a0818","#4466cc"),fontSize:11,padding:"4px 12px",marginTop:6}}>{isLast?"続ける":"▶ 次へ"}</button>
+  </div>);
 }
 
 function MenuScreen({gs,setGs,onClose}){
@@ -654,9 +685,48 @@ function MenuScreen({gs,setGs,onClose}){
         {tab==="item"&&(inventory.length>0?inventory.map((it,i)=>(<div key={i} style={{background:"#0a0508",border:"1px solid #2d1a2d",padding:10,marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}}><div style={{flex:1}}><div style={{color:it.type==="pp"?"#88aaff":"#ffcc00",fontSize:12}}>✦ {it.name}</div><div style={{color:"#8b6060",fontSize:10,marginTop:3,lineHeight:1.5}}>{it.desc?.replace(/ppRestore:\d+/,"")}</div>{it.hp>0&&<div style={{color:"#4a8a4a",fontSize:10,marginTop:2}}>HP +{it.hp}</div>}{it.type==="pp"&&<div style={{color:"#4a6aaa",fontSize:10,marginTop:2}}>PP回復（{it.name.includes("大")?"全回復":"PP+15"}）</div>}</div><button onClick={()=>useItm(it,i)} style={BS("#0a1a0a","#2a6a2a",{fontSize:11,padding:"6px 10px",flexShrink:0})}>使う</button></div>)):<div style={{color:"#4a3030",fontSize:12,textAlign:"center",marginTop:40}}>アイテムはない。</div>)}
         {tab==="dex"&&(<>
           <div style={{display:"flex",borderBottom:"1px solid #1a0a1a",marginBottom:10}}>{DEX.map(({k,l})=>(<button key={k} onClick={()=>setDexTab(k)} style={{flex:1,background:dexTab===k?"#0d0508":"none",border:"none",borderBottom:dexTab===k?"1px solid #6a3040":"none",color:dexTab===k?"#ccbbaa":"#5a4050",padding:"7px 0",cursor:"pointer",fontSize:11,fontFamily:"serif"}}>{l}</button>))}</div>
-          {dexTab==="creature"&&(caught.length>0?caught.map((c,i)=>(<div key={i} style={{background:"#0a0508",border:"1px solid #2d1a2d",padding:10,marginBottom:8,display:"flex",gap:8,alignItems:"center"}}><CreatureCanvas spr={c.spr} color={c.color} size={40}/><div><div style={{color:"#ccbbaa",fontSize:13}}>{c.name}</div><div style={{color:"#6a5050",fontSize:10,marginTop:1}}>{c.types?.join("・")} / Lv.{c.level}</div></div></div>)):<div style={{color:"#4a3030",fontSize:12,textAlign:"center",marginTop:40}}>まだ何も捕まえていない。</div>)}
+          {dexTab==="creature"&&(<>
+            <div style={{color:"#4a3040",fontSize:10,letterSpacing:2,marginBottom:8,borderBottom:"1px solid #1a0a1a",paddingBottom:6}}>── 出会った生き物 ──</div>
+            {STARTERS.map((s,si)=>{
+              const chain=EVO[s.id]||[];
+              const partyC=gs.party?.find(c=>baseIdOf(c.id)===s.id);
+              const caughtC=caught.find(c=>baseIdOf(c.id)===s.id);
+              const currentForm=partyC||caughtC;
+              const currentEvoIdx=currentForm?ID2EVO[currentForm.id]?.idx??0:0;
+              return(<div key={si} style={{background:"#0a0810",border:"1px solid #1a1a3d",padding:10,marginBottom:10}}>
+                {/* 進化系一覧 */}
+                <div style={{display:"flex",gap:6,marginBottom:8,justifyContent:"space-around"}}>
+                  {chain.map((stage,ei)=>{
+                    const isCurrentEvo=currentForm&&ID2EVO[currentForm.id]?.idx===ei;
+                    const isReached=currentForm&&currentEvoIdx>=ei;
+                    return(<div key={ei} style={{textAlign:"center",opacity:isReached?1:0.35}}>
+                      <CreatureCanvas spr={stage.spr} color={s.color} size={36}/>
+                      <div style={{color:isCurrentEvo?"#ffcc44":"#8888aa",fontSize:8,marginTop:2,maxWidth:48}}>{isReached?stage.name:"？？？"}</div>
+                      {ei<chain.length-1&&stage.evoAt&&<div style={{color:"#4a4a6a",fontSize:8}}>Lv{stage.evoAt}→</div>}
+                    </div>);
+                  })}
+                </div>
+                {/* 現在の状態と説明 */}
+                <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:6}}>
+                  <CreatureCanvas spr={currentForm?.spr||s.spr} color={s.color} size={40}/>
+                  <div style={{flex:1}}>
+                    <div style={{color:"#ccbbaa",fontSize:12}}>{currentForm?.name||s.name}</div>
+                    <div style={{color:"#6a5050",fontSize:10}}>{s.types?.join("・")}</div>
+                    {currentForm?.level&&<div style={{color:"#4a5a4a",fontSize:10}}>Lv.{currentForm.level}</div>}
+                  </div>
+                  {partyC&&<span style={{color:"#4a8a4a",fontSize:9,border:"1px solid #2a5a2a",padding:"1px 4px"}}>仲間</span>}
+                  {caughtC&&!partyC&&<span style={{color:"#4a4a8a",fontSize:9,border:"1px solid #2a2a5a",padding:"1px 4px"}}>図鑑</span>}
+                </div>
+                <div style={{color:"#8888aa",fontSize:10,lineHeight:1.7,fontStyle:"italic"}}>「{s.desc}」</div>
+              </div>);
+            })}
+            {caught.filter(c=>!STARTERS.some(s=>baseIdOf(c.id)===s.id)).length>0&&<>
+              <div style={{color:"#4a3040",fontSize:10,letterSpacing:2,marginBottom:8,marginTop:4,borderBottom:"1px solid #1a0a1a",paddingBottom:6}}>── その他 ──</div>
+              {caught.filter(c=>!STARTERS.some(s=>baseIdOf(c.id)===s.id)).map((c,i)=>(<div key={i} style={{background:"#0a0508",border:"1px solid #2d1a2d",padding:10,marginBottom:8,display:"flex",gap:8,alignItems:"center"}}><CreatureCanvas spr={c.spr} color={c.color||"#5a5a5a"} size={40}/><div><div style={{color:"#ccbbaa",fontSize:13}}>{c.name}</div><div style={{color:"#6a5050",fontSize:10,marginTop:1}}>{c.types?.join("・")} / Lv.{c.level}</div></div></div>))}
+            </>}
+          </>)}
           {dexTab==="memory"&&(memoryItems.length>0?memoryItems.map((it,i)=>(<div key={i} style={{background:"#0a0810",border:"1px solid #1a1a3d",padding:12,marginBottom:8}}><div style={{color:"#8888cc",fontSize:11,marginBottom:6}}>◈ {it.name}</div><div style={{color:"#9a9aaa",fontSize:11,lineHeight:1.7,fontStyle:"italic"}}>{it.desc}</div></div>)):<div style={{color:"#4a3030",fontSize:12,textAlign:"center",marginTop:40}}>記憶はない。</div>)}
-          {dexTab==="char"&&(seenChars.length>0?seenChars.map((cid,i)=>{const p=CHAR_PROFILES[cid];if(!p)return null;return(<div key={i} style={{background:"#0a0508",border:"1px solid #2d1a2d",padding:12,marginBottom:8,display:"flex",gap:10,alignItems:"flex-start"}}><CreatureCanvas spr={p.spr} color="#5a3a5a" size={48}/><div><div style={{color:"#ccbbaa",fontSize:13}}>{p.name}</div><div style={{color:"#8b6060",fontSize:10,marginTop:1}}>{p.role}</div><div style={{color:"#7a6a7a",fontSize:11,marginTop:6,lineHeight:1.7}}>{p.desc}</div></div></div>);}):<div style={{color:"#4a3030",fontSize:12,textAlign:"center",marginTop:40}}>まだ誰とも会っていない。</div>)}
+          {dexTab==="char"&&(seenChars.length>0?seenChars.map((cid,i)=>{const p=CHAR_PROFILES[cid];if(!p)return null;const lines=p.desc.split("\n");return(<div key={i} style={{background:"#0a0508",border:"1px solid #2d1a2d",padding:12,marginBottom:10}}><div style={{display:"flex",gap:10,alignItems:"flex-start"}}><CreatureCanvas spr={p.spr} color="#5a3a5a" size={48}/><div style={{flex:1}}><div style={{color:"#ccbbaa",fontSize:13}}>{p.name}</div><div style={{color:"#8b6060",fontSize:10,marginTop:1}}>{p.role}</div></div></div><div style={{marginTop:10,borderTop:"1px solid #1a0a1a",paddingTop:8}}>{lines.map((l,li)=>(<div key={li} style={{color:"#9a8a9a",fontSize:11,lineHeight:1.8,marginBottom:l===""?4:0}}>{l===""?" ":l}</div>))}</div></div>);}):<div style={{color:"#4a3030",fontSize:12,textAlign:"center",marginTop:40}}>まだ誰とも会っていない。</div>)}
         </>)}
       </div>
       <div style={{padding:"8px 12px",borderTop:"1px solid #1a0a1a"}}><button onClick={onClose} style={BS("#0a0508","#3d2020",{width:"100%"})}>閉じる</button></div>
@@ -666,7 +736,7 @@ function MenuScreen({gs,setGs,onClose}){
 
 function MsgOverlay({msg,onClose}){
   if(!msg)return null;
-  return(<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.72)",zIndex:200,display:"flex",alignItems:"flex-end",justifyContent:"center",padding:"0 0 80px"}}><div style={{background:"#0a0505",border:"1px solid #3d2020",padding:16,maxWidth:380,width:"calc(100% - 20px)",fontFamily:"serif"}}>{msg.type==="item"&&(<><div style={{color:msg.item.type==="pp"?"#88aaff":"#ffcc00",fontSize:11,marginBottom:6}}>✦ {msg.item.name}</div><div style={{color:"#ccbbaa",fontSize:12,lineHeight:1.6}}>{msg.item.desc?.replace(/ppRestore:\d+/,"")}</div>{msg.item.type==="heal"&&<div style={{color:"#4a8a4a",fontSize:11,marginTop:6}}>→ アイテム袋に入れた（HP+{msg.item.hp}）</div>}{msg.item.type==="pp"&&<div style={{color:"#4a6aaa",fontSize:11,marginTop:6}}>→ アイテム袋に入れた</div>}{msg.item.type==="memory"&&<div style={{color:"#5a6aaa",fontSize:11,marginTop:6}}>→ 図鑑「記憶」に追加した</div>}</>)}{msg.type==="talk"&&(<><div style={{color:"#8b6060",fontSize:10,marginBottom:4}}>{msg.speaker}</div><div style={{color:"#ccbbaa",fontSize:12,lineHeight:1.7}}>「{msg.text}」</div>{msg.joinMsg&&<div style={{color:"#4a8aaa",fontSize:11,marginTop:10}}>★ {msg.joinMsg}</div>}</>)}{msg.type==="drop"&&(<><div style={{color:"#aaddaa",fontSize:11,marginBottom:6}}>✦ 養命種を拾った</div><div style={{color:"#88cc88",fontSize:12,lineHeight:1.6}}>野生の生き物が落としていった。アイテム袋に入れた。</div></>)}{msg.type==="outro"&&<div style={{color:"#ccbbaa",fontSize:12,lineHeight:1.7}}>「{msg.text}」</div>}<button onClick={()=>{msg.cb&&msg.cb();onClose();}} style={{background:"none",border:"1px solid #3d2020",color:"#8b6060",fontSize:11,padding:"4px 16px",cursor:"pointer",fontFamily:"serif",marginTop:12,width:"100%"}}>続ける ▶</button></div></div>);
+  return(<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.72)",zIndex:200,display:"flex",alignItems:"flex-end",justifyContent:"center",padding:"0 0 80px"}}><div style={{background:"#0a0505",border:"1px solid #3d2020",padding:16,maxWidth:380,width:"calc(100% - 20px)",fontFamily:"serif"}}>{msg.type==="item"&&(<><div style={{color:msg.item.type==="pp"?"#88aaff":"#ffcc00",fontSize:11,marginBottom:6}}>✦ {msg.item.name}</div><div style={{color:"#ccbbaa",fontSize:12,lineHeight:1.6}}>{msg.item.desc?.replace(/ppRestore:\d+/,"")}</div>{msg.item.type==="heal"&&<div style={{color:"#4a8a4a",fontSize:11,marginTop:6}}>→ アイテム袋に入れた（HP+{msg.item.hp}）</div>}{msg.item.type==="pp"&&<div style={{color:"#4a6aaa",fontSize:11,marginTop:6}}>→ アイテム袋に入れた</div>}{msg.item.type==="memory"&&<div style={{color:"#5a6aaa",fontSize:11,marginTop:6}}>→ 図鑑「記憶」に追加した</div>}</>)}{msg.type==="talk"&&(<><div style={{color:"#8b6060",fontSize:10,marginBottom:4}}>{msg.speaker}</div><div style={{color:"#ccbbaa",fontSize:12,lineHeight:1.7}}>「{msg.text}」</div>{msg.joinMsg&&<div style={{color:"#4a8aaa",fontSize:11,marginTop:10}}>★ {msg.joinMsg}</div>}</>)}{msg.type==="drop"&&(<><div style={{color:"#aaddaa",fontSize:11,marginBottom:6}}>✦ {msg.dropKey==="half_meds"?"飲みかけの薬":"養命種"}を拾った</div><div style={{color:"#88cc88",fontSize:12,lineHeight:1.6}}>野生の生き物が落としていった。アイテム袋に入れた。</div></>)}{msg.type==="outro"&&<div style={{color:"#ccbbaa",fontSize:12,lineHeight:1.7}}>「{msg.text}」</div>}<button onClick={()=>{msg.cb&&msg.cb();onClose();}} style={{background:"none",border:"1px solid #3d2020",color:"#8b6060",fontSize:11,padding:"4px 16px",cursor:"pointer",fontFamily:"serif",marginTop:12,width:"100%"}}>続ける ▶</button></div></div>);
 }
 
 function EndingScreen({type}){
@@ -710,7 +780,7 @@ function EndingScreen({type}){
   );
 }
 
-function App(){
+export default function App(){
   const saved=load();
   const [screen,setScreen]=useState("title");
   const [gs,setGs]=useState(saved?{...INIT_GS,...saved}:INIT_GS);
@@ -727,7 +797,7 @@ function App(){
   const onDropItem=useCallback((key)=>{
     const itDef=ITEMS[key];if(!itDef)return;
     setGs(p=>{const n={...p,inventory:[...(p.inventory||[]),{...itDef,_uid:`drop_${Date.now()}`}]};save(n);return n;});
-    setMsgO({type:"drop",cb:()=>{}});
+    setMsgO({type:"drop",dropKey:key,cb:()=>{}});
   },[]);
 
   const onBtlEnd=useCallback(({result,party,caught})=>{
